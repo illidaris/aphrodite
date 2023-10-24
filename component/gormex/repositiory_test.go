@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/IvanWhisper/aphrodite/component/dependency"
+	"github.com/illidaris/aphrodite/component/dependency"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/agiledragon/gomonkey/v2"

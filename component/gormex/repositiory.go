@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/IvanWhisper/aphrodite/component/dependency"
-	"github.com/IvanWhisper/aphrodite/pkg/group"
+	"github.com/illidaris/aphrodite/component/dependency"
+	"github.com/illidaris/aphrodite/pkg/group"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

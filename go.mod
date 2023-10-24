@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
-	github.com/IvanWhisper/aphrodite v0.0.0-20231024062030-70ec7802d18f
 	github.com/agiledragon/gomonkey/v2 v2.10.1
 	github.com/google/uuid v1.3.1
 	github.com/illidaris/extensions v0.0.0-20231010073723-aefe3a294009
