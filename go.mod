@@ -7,7 +7,7 @@ require (
 	github.com/agiledragon/gomonkey/v2 v2.10.1
 	github.com/google/uuid v1.3.1
 	github.com/illidaris/extensions v0.0.0-20231010073723-aefe3a294009
-	github.com/illidaris/logger v1.2.1
+	github.com/illidaris/logger v1.2.2
 	github.com/smartystreets/goconvey v1.8.1
 	go.uber.org/zap v1.26.0
 	gorm.io/driver/mysql v1.5.2
