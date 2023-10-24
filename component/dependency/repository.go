@@ -14,14 +14,14 @@ type IUnitOfWork interface {
 
 // BaseOption base repo exec
 type BaseOption struct {
-	Ignore    bool     // ignore if exist
-	Lock      bool     // lock row
-	ReadOnly  bool     // read only
-	Selects   []string // select fields
-	Omits     []string // omit fields select omit
-	Conds     []any    // conds where
-	Page      IPage    // page
-	BatchSize int64    // exec by batch
+	Ignore    bool     `json:"ignore"`    // ignore if exist
+	Lock      bool     `json:"lock"`      // lock row
+	ReadOnly  bool     `json:"readOnly"`  // read only
+	Selects   []string `json:"selects"`   // select fields
+	Omits     []string `json:"omits"`     // omit fields select omit
+	Conds     []any    `json:"conds"`     // conds where
+	Page      IPage    `json:"page"`      // page
+	BatchSize int64    `json:"batchSize"` // exec by batch
 }
 
 // IRepository repo

@@ -3,6 +3,8 @@ package embedded
 import (
 	"math/rand"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type IItem any // client or sdk
@@ -20,6 +22,7 @@ type IComponent[T IItem] interface {
 // IInstance
 type IInstance[T IItem] interface {
 	GetID() string
+	GetName() string
 	GetWeight() float64
 	GetValue() T
 }
@@ -31,7 +34,7 @@ var rd = rand.New(rand.NewSource(time.Now().UnixNano())) // rand seed
 func defaultBalance[T IItem](ts ...IInstance[T]) IInstance[T] {
 	switch len(ts) {
 	case 0:
-		return nil
+		return &Instance[T]{}
 	case 1:
 		return ts[0]
 	default:
@@ -83,21 +86,27 @@ func (c *Component[T]) NewReader(id string, items ...T) {
 func (c *Component[T]) GetReader(id string) T {
 	return c.ReaderBalance(c.Readers[id]...).GetValue()
 }
-func NewInstance[T IItem](id string, item T) IInstance[T] {
+func NewInstance[T IItem](name string, item T) IInstance[T] {
 	return &Instance[T]{
-		Id:    id,
+		Id:    uuid.NewString(),
+		Name:  name,
 		Value: item,
 	}
 }
 
 type Instance[T IItem] struct {
 	Id     string
+	Name   string
 	Weight float64
 	Value  T
 }
 
 func (c *Instance[T]) GetID() string {
 	return c.Id
+}
+
+func (c *Instance[T]) GetName() string {
+	return c.Name
 }
 
 func (c *Instance[T]) GetWeight() float64 {
