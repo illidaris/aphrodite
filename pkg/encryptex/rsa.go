@@ -10,6 +10,8 @@ import (
 	"io"
 )
 
+var ErrInvalidFormat = errors.New("key is invalid format")
+
 // RSAGenerateKey generate RSA private key
 func RSAGenerateKey(bits int, out io.Writer) error {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
@@ -28,7 +30,7 @@ func RSAGenerateKey(bits int, out io.Writer) error {
 func RSAGeneratePublicKey(priKey []byte, out io.Writer) error {
 	block, _ := pem.Decode(priKey)
 	if block == nil {
-		return errors.New("key is invalid format")
+		return ErrInvalidFormat
 	}
 
 	// x509 parse
@@ -51,7 +53,7 @@ func RSAGeneratePublicKey(priKey []byte, out io.Writer) error {
 func RSAEncrypt(src, pubKey []byte) ([]byte, error) {
 	block, _ := pem.Decode(pubKey)
 	if block == nil {
-		return nil, errors.New("key is invalid format")
+		return nil, ErrInvalidFormat
 	}
 
 	// x509 parse
@@ -77,7 +79,7 @@ func RSAEncrypt(src, pubKey []byte) ([]byte, error) {
 func RSADecrypt(src, priKey []byte) ([]byte, error) {
 	block, _ := pem.Decode(priKey)
 	if block == nil {
-		return nil, errors.New("key is invalid format")
+		return nil, ErrInvalidFormat
 	}
 
 	// x509 parse
@@ -98,7 +100,7 @@ func RSADecrypt(src, priKey []byte) ([]byte, error) {
 func RSASign(src []byte, priKey []byte, hash crypto.Hash) ([]byte, error) {
 	block, _ := pem.Decode(priKey)
 	if block == nil {
-		return nil, errors.New("key is invalid format")
+		return nil, ErrInvalidFormat
 	}
 
 	// x509 parse
@@ -126,7 +128,7 @@ func RSASign(src []byte, priKey []byte, hash crypto.Hash) ([]byte, error) {
 func RSAVerify(src, sign, pubKey []byte, hash crypto.Hash) error {
 	block, _ := pem.Decode(pubKey)
 	if block == nil {
-		return errors.New("key is invalid format")
+		return ErrInvalidFormat
 	}
 
 	// x509 parse
