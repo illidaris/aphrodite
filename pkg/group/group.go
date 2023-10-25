@@ -7,7 +7,7 @@ import (
 )
 
 // Count
-func Count[T any](batch int, p ...T) int {
+func Count[T any](batch int, p ...*T) int {
 	total := len(p)
 	if total == 0 {
 		return 0
@@ -19,8 +19,8 @@ func Count[T any](batch int, p ...T) int {
 }
 
 // Group
-func Group[T any](batch int, p ...T) [][]T {
-	groups := [][]T{}
+func Group[T any](batch int, p ...*T) [][]*T {
+	groups := [][]*T{}
 	gCount := Count[T](batch, p...)
 	if gCount == 0 {
 		return groups
@@ -37,7 +37,7 @@ func Group[T any](batch int, p ...T) [][]T {
 }
 
 // GroupFunc
-func GroupFunc[T any](f func(v ...T) (int64, error), batch int, p ...T) (int64, map[int]error) {
+func GroupFunc[T any](f func(v ...*T) (int64, error), batch int, p ...*T) (int64, map[int]error) {
 	var (
 		wg          sync.WaitGroup
 		errs        sync.Map
@@ -47,7 +47,7 @@ func GroupFunc[T any](f func(v ...T) (int64, error), batch int, p ...T) (int64, 
 	groups := Group[T](batch, p...)
 	for index, g := range groups {
 		wg.Add(1)
-		go func(i int, param ...T) {
+		go func(i int, param ...*T) {
 			var err error
 			defer wg.Done()
 			defer func() {

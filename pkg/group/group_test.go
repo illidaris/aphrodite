@@ -14,7 +14,7 @@ func TestGroup(t *testing.T) {
 			Name string
 			Age  int
 		}
-		demos := []demo{
+		demos := []*demo{
 			{Name: "x4", Age: 4},
 			{Name: "x3", Age: 3},
 			{Name: "x2", Age: 2},
@@ -55,7 +55,7 @@ func TestGroupFunc(t *testing.T) {
 			Name string
 			Age  int
 		}
-		demos := []demo{
+		demos := []*demo{
 			{Name: "x4", Age: 4},
 			{Name: "x3", Age: 3},
 			{Name: "x2", Age: 2},
@@ -67,7 +67,7 @@ func TestGroupFunc(t *testing.T) {
 		batch := 3
 		total := len(demos)
 		convey.Convey("GroupFunc", func() {
-			affect, errM := GroupFunc(func(v ...demo) (int64, error) {
+			affect, errM := GroupFunc(func(v ...*demo) (int64, error) {
 				for _, item := range v {
 					println(item.Name)
 				}
@@ -86,7 +86,7 @@ func TestGroupFuncWithErr(t *testing.T) {
 			Name string
 			Age  int
 		}
-		demos := []demo{
+		demos := []*demo{
 			{Name: "x4", Age: 4},
 			{Name: "x3", Age: 3},
 			{Name: "x2", Age: 2},
@@ -103,9 +103,9 @@ func TestGroupFuncWithErr(t *testing.T) {
 			}
 		}
 		convey.Convey("GroupFunc_Error", func() {
-			affect, errM := GroupFunc(func(v ...demo) (int64, error) {
+			affect, errM := GroupFunc(func(v ...*demo) (int64, error) {
 				var err error
-				result := []demo{}
+				result := []*demo{}
 				for _, item := range v {
 					if item.Age > 5 {
 						err = fmt.Errorf("find err: %d", item.Age)

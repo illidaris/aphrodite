@@ -21,80 +21,90 @@ var _ = dependency.IRepository[dependency.IEntity](&BaseRepository[dependency.IE
 type BaseRepository[T dependency.IEntity] struct{} // base repository
 
 // BaseCreate
-func (r *BaseRepository[T]) BaseCreate(ctx context.Context, opt dependency.BaseOption, p ...T) (int64, error) {
-	if len(p) == 0 {
+func (r *BaseRepository[T]) BaseCreate(ctx context.Context, ps []*T, opts ...dependency.BaseOptionFunc) (int64, error) {
+	if len(ps) == 0 {
 		return 0, nil
 	}
-	return BaseGroup(func(v ...T) (int64, error) {
-		db := r.BuildFrmOption(ctx, p[0], opt)
+	opt := dependency.NewBaseOption(opts...)
+	return BaseGroup(func(v ...*T) (int64, error) {
+		db := r.BuildFrmOption(ctx, opt)
 		result := db.Create(v)
 		return result.RowsAffected, result.Error
-	}, opt, p...)
+	}, opt, ps...)
 }
 
 // BaseSave
-func (r *BaseRepository[T]) BaseSave(ctx context.Context, opt dependency.BaseOption, p ...T) (int64, error) {
-	if len(p) == 0 {
+func (r *BaseRepository[T]) BaseSave(ctx context.Context, ps []*T, opts ...dependency.BaseOptionFunc) (int64, error) {
+	if len(ps) == 0 {
 		return 0, nil
 	}
-	return BaseGroup(func(v ...T) (int64, error) {
-		db := r.BuildFrmOption(ctx, p[0], opt)
+	opt := dependency.NewBaseOption(opts...)
+	return BaseGroup(func(v ...*T) (int64, error) {
+		db := r.BuildFrmOption(ctx, opt)
 		result := db.Save(v)
 		return result.RowsAffected, result.Error
-	}, opt, p...)
+	}, opt, ps...)
 }
 
 // BaseUpdate
-func (r *BaseRepository[T]) BaseUpdate(ctx context.Context, opt dependency.BaseOption, p T) (int64, error) {
-	result := r.BuildFrmOption(ctx, p, opt).Updates(p)
+func (r *BaseRepository[T]) BaseUpdate(ctx context.Context, p *T, opts ...dependency.BaseOptionFunc) (int64, error) {
+	result := r.BuildFrmOptions(ctx, opts...).Updates(p)
 	return result.RowsAffected, result.Error
 }
 
 // BaseGet
-func (r *BaseRepository[T]) BaseGet(ctx context.Context, opt dependency.BaseOption, p T) (int64, error) {
-	db := r.BuildFrmOption(ctx, p, opt)
-	res := db.First(p)
-	return res.RowsAffected, res.Error
+func (r *BaseRepository[T]) BaseGet(ctx context.Context, opts ...dependency.BaseOptionFunc) (*T, error) {
+	var t T
+	db := r.BuildFrmOptions(ctx, opts...)
+	res := db.First(&t)
+	if res.RowsAffected == 0 {
+		return nil, nil
+	}
+	return &t, res.Error
 }
 
 // BaseDelete
-func (r *BaseRepository[T]) BaseDelete(ctx context.Context, opt dependency.BaseOption, p T) (int64, error) {
-	result := r.BuildFrmOption(ctx, p, opt).Delete(p)
+func (r *BaseRepository[T]) BaseDelete(ctx context.Context, p *T, opts ...dependency.BaseOptionFunc) (int64, error) {
+	result := r.BuildFrmOptions(ctx, opts...).Delete(p)
 	return result.RowsAffected, result.Error
 }
 
 // BaseCount
-func (r *BaseRepository[T]) BaseCount(ctx context.Context, opt dependency.BaseOption, p T) (int64, error) {
+func (r *BaseRepository[T]) BaseCount(ctx context.Context, opts ...dependency.BaseOptionFunc) (int64, error) {
 	var count int64
-	db := r.BuildConds(ctx, p, true, opt.Conds...)
+	opt := dependency.NewBaseOption(opts...)
+	db := r.BuildConds(ctx, opt)
 	res := db.Count(&count)
 	return count, res.Error
 }
 
 // BaseQuery
-func (r *BaseRepository[T]) BaseQuery(ctx context.Context, opt dependency.BaseOption, p T) ([]T, error) {
+func (r *BaseRepository[T]) BaseQuery(ctx context.Context, opts ...dependency.BaseOptionFunc) ([]T, error) {
 	result := []T{}
-	db := r.BuildFrmOption(ctx, p, opt)
+	db := r.BuildFrmOptions(ctx, opts...)
 	res := db.Find(&result)
 	return result, res.Error
 }
 
-func (r *BaseRepository[T]) BuildConds(ctx context.Context, p T, readOnly bool, conds ...any) *gorm.DB {
-	var db *gorm.DB
-	if readOnly {
-		db = ReadOnly(ctx, p.Database())
+func (r *BaseRepository[T]) BuildConds(ctx context.Context, opt *dependency.BaseOption) *gorm.DB {
+	var (
+		t  T
+		db *gorm.DB
+	)
+	if opt != nil && opt.ReadOnly {
+		db = ReadOnly(ctx, t.Database())
 	} else {
-		db = CoreFrmCtx(ctx, p.Database())
+		db = CoreFrmCtx(ctx, t.Database())
 	}
-	db = db.Model(p)
-	if len(conds) > 0 {
-		db = db.Where(conds[0], conds[1:]...)
+	db = db.Model(&t)
+	if opt != nil && len(opt.Conds) > 0 {
+		db = db.Where(opt.Conds[0], opt.Conds[1:]...)
 	}
 	return db
 }
 
-func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, p T, opt dependency.BaseOption) *gorm.DB {
-	db := r.BuildConds(ctx, p, opt.ReadOnly, opt.Conds...)
+func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, opt *dependency.BaseOption) *gorm.DB {
+	db := r.BuildConds(ctx, opt)
 	if opt.Ignore {
 		db = db.Clauses(clause.Insert{Modifier: "IGNORE"})
 	}
@@ -107,6 +117,17 @@ func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, p T, opt depende
 	if len(opt.Omits) > 0 {
 		db = db.Omit(opt.Omits...)
 	}
+	db = Option2Page(db, opt)
+	return db
+}
+
+func (r *BaseRepository[T]) BuildFrmOptions(ctx context.Context, opts ...dependency.BaseOptionFunc) *gorm.DB {
+	opt := dependency.NewBaseOption(opts...)
+	db := r.BuildFrmOption(ctx, opt)
+	return db
+}
+
+func Option2Page(db *gorm.DB, opt *dependency.BaseOption) *gorm.DB {
 	if opt.Page != nil {
 		for _, f := range opt.Page.GetSorts() {
 			key := f.GetField()
@@ -117,10 +138,12 @@ func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, p T, opt depende
 		}
 		db = db.Offset(int((opt.Page.GetPageIndex() - 1) * opt.Page.GetPageSize())).Limit(int(opt.Page.GetPageSize()))
 	} else {
-		if opt.BatchSize == 0 {
+		if opt.ReadOnly && opt.BatchSize == 0 {
 			opt.BatchSize = BATCH_SIZE
 		}
-		db = db.Limit(int(opt.BatchSize))
+		if opt.BatchSize > 0 {
+			db = db.Limit(int(opt.BatchSize))
+		}
 	}
 	return db
 }
@@ -134,7 +157,7 @@ func ReadOnly(ctx context.Context, id string) *gorm.DB {
 		Context:     ctx,
 	})
 }
-func BaseGroup[T dependency.IEntity](f func(v ...T) (int64, error), opt dependency.BaseOption, p ...T) (int64, error) {
+func BaseGroup[T dependency.IEntity](f func(v ...*T) (int64, error), opt *dependency.BaseOption, p ...*T) (int64, error) {
 	if opt.BatchSize == 0 {
 		opt.BatchSize = BATCH_SIZE
 	}

@@ -34,19 +34,20 @@ func TestNewUnitOfWork(t *testing.T) {
 		convey.Convey("TestBaseRepositoryBaseCreate", t, func() {
 			convey.Convey("BaseCreate", func() {
 				uok := NewUnitOfWork("db")
-				repo := &BaseRepository[*testStructPo]{}
+				repo := &BaseRepository[testStructPo]{}
 				f1 := func(subCtx context.Context) error {
-					_, err := repo.BaseUpdate(subCtx, dependency.BaseOption{}, &testStructPo{
-						Id:     1,
+					_, err := repo.BaseUpdate(subCtx, &testStructPo{
 						Code:   "122",
 						Status: 2,
-					})
+					}, dependency.WithConds(2))
 					return err
 				}
 				f2 := func(subCtx context.Context) error {
-					_, err := repo.BaseCreate(subCtx, dependency.BaseOption{}, &testStructPo{
-						Id:   2,
-						Code: "1221",
+					_, err := repo.BaseCreate(subCtx, []*testStructPo{
+						{
+							Id:   2,
+							Code: "1221",
+						},
 					})
 					return err
 				}
@@ -76,9 +77,9 @@ func TestNewUnitOfWorkRollback(t *testing.T) {
 			convey.Convey("BaseCreate", func() {
 				right := errors.New("err")
 				uok := NewUnitOfWork("db")
-				repo := &BaseRepository[*testStructPo]{}
+				repo := &BaseRepository[testStructPo]{}
 				f1 := func(subCtx context.Context) error {
-					_, _ = repo.BaseUpdate(subCtx, dependency.BaseOption{}, &testStructPo{
+					_, _ = repo.BaseUpdate(subCtx, &testStructPo{
 						Id:     1,
 						Code:   "122",
 						Status: 2,
@@ -86,9 +87,10 @@ func TestNewUnitOfWorkRollback(t *testing.T) {
 					return right
 				}
 				f2 := func(subCtx context.Context) error {
-					_, err := repo.BaseCreate(subCtx, dependency.BaseOption{}, &testStructPo{
-						Id:   2,
-						Code: "1221",
+					_, err := repo.BaseCreate(subCtx, []*testStructPo{
+						{
+							Code: "1221",
+						},
 					})
 					return err
 				}

@@ -37,8 +37,8 @@ func TestBaseRepositoryBaseCreate(t *testing.T) {
 		}
 		convey.Convey("TestBaseRepositoryBaseCreate", t, func() {
 			convey.Convey("BaseCreate", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				affect, err := repo.BaseCreate(ctx, dependency.BaseOption{}, pos...)
+				repo := &BaseRepository[testStructPo]{}
+				affect, err := repo.BaseCreate(ctx, pos)
 				convey.So(affect, convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
 			})
@@ -66,8 +66,8 @@ func TestBaseRepositoryBaseCreateIgnore(t *testing.T) {
 		}
 		convey.Convey("TestBaseRepositoryBaseCreate", t, func() {
 			convey.Convey("BaseCreate", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				affect, err := repo.BaseCreate(ctx, dependency.BaseOption{Ignore: true}, pos...)
+				repo := &BaseRepository[testStructPo]{}
+				affect, err := repo.BaseCreate(ctx, pos, dependency.WithIgnore(true))
 				convey.So(affect, convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
 			})
@@ -95,8 +95,8 @@ func TestBaseRepositoryBaseSave(t *testing.T) {
 		}
 		convey.Convey("TestBaseRepositoryBaseSave", t, func() {
 			convey.Convey("BaseSave", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				affect, err := repo.BaseSave(ctx, dependency.BaseOption{}, pos...)
+				repo := &BaseRepository[testStructPo]{}
+				affect, err := repo.BaseSave(ctx, pos)
 				convey.So(affect, convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
 			})
@@ -116,17 +116,13 @@ func TestBaseRepositoryBaseUpdate(t *testing.T) {
 			t.Error(err)
 		}
 		ctx := context.Background()
-		pos := []*testStructPo{
-			{
-				Id:    1,
-				BizId: 1,
-				Code:  "x1",
-			},
-		}
 		convey.Convey("TestBaseRepositoryBaseUpdate", t, func() {
 			convey.Convey("BaseUpdate", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				affect, err := repo.BaseUpdate(ctx, dependency.BaseOption{}, pos[0])
+				repo := &BaseRepository[testStructPo]{}
+				affect, err := repo.BaseUpdate(ctx, &testStructPo{
+					BizId: 1,
+					Code:  "x1",
+				}, dependency.WithConds(1))
 				convey.So(affect, convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
 			})
@@ -154,8 +150,8 @@ func TestBaseRepositoryBaseSoftDelete(t *testing.T) {
 		p.Id = 1
 		convey.Convey("TestBaseRepositoryBaseSoftDelete", t, func() {
 			convey.Convey("BaseDelete", func() {
-				repo := &BaseRepository[*testStructDeledPo]{}
-				affect, err := repo.BaseDelete(ctx, dependency.BaseOption{}, p)
+				repo := &BaseRepository[testStructDeledPo]{}
+				affect, err := repo.BaseDelete(ctx, p)
 				convey.So(affect, convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
 			})
@@ -184,8 +180,8 @@ func TestBaseRepositoryBaseDelete(t *testing.T) {
 		}
 		convey.Convey("TestBaseRepositoryBaseDelete", t, func() {
 			convey.Convey("BaseDelete", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				affect, err := repo.BaseDelete(ctx, dependency.BaseOption{}, pos[0])
+				repo := &BaseRepository[testStructPo]{}
+				affect, err := repo.BaseDelete(ctx, pos[0])
 				convey.So(affect, convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
 			})
@@ -208,16 +204,16 @@ func TestBaseRepositoryBaseCount(t *testing.T) {
 		ctx := context.Background()
 		convey.Convey("TestBaseRepositoryBaseCount", t, func() {
 			convey.Convey("BaseCount", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				affect, err := repo.BaseCount(ctx, dependency.BaseOption{}, &testStructPo{})
+				repo := &BaseRepository[testStructPo]{}
+				affect, err := repo.BaseCount(ctx)
 				convey.So(affect, convey.ShouldEqual, 2)
 				convey.So(err, convey.ShouldBeNil)
 			})
 			convey.Convey("BaseGet", func() {
-				repo := &BaseRepository[*testStructPo]{}
+				repo := &BaseRepository[testStructPo]{}
 				p := &testStructPo{Id: 2}
-				affect, err := repo.BaseGet(ctx, dependency.BaseOption{}, p)
-				convey.So(affect, convey.ShouldEqual, 1)
+				res, err := repo.BaseGet(ctx, dependency.WithConds(p.Id))
+				convey.So(res, convey.ShouldNotBeNil)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(p.Id, convey.ShouldEqual, 2)
 			})
@@ -256,14 +252,14 @@ func TestBaseRepositoryBaseQuery(t *testing.T) {
 		ctx := context.Background()
 		convey.Convey("TestBaseRepositoryBaseQuery", t, func() {
 			convey.Convey("BaseQuery", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				pos, err := repo.BaseQuery(ctx, dependency.BaseOption{}, &testStructPo{})
+				repo := &BaseRepository[testStructPo]{}
+				pos, err := repo.BaseQuery(ctx)
 				convey.So(len(pos), convey.ShouldEqual, 5)
 				convey.So(err, convey.ShouldBeNil)
 			})
 			convey.Convey("BaseQueryPage", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				pos, err := repo.BaseQuery(ctx, dependency.BaseOption{Page: &testpage{Page: 1, Size: 2}}, &testStructPo{})
+				repo := &BaseRepository[testStructPo]{}
+				pos, err := repo.BaseQuery(ctx, dependency.WithPage(&testpage{Page: 1, Size: 2}))
 				convey.So(len(pos), convey.ShouldEqual, 2)
 				convey.So(err, convey.ShouldBeNil)
 			})
@@ -300,42 +296,42 @@ func TestBaseRepositoryBaseQueryConds(t *testing.T) {
 		ctx := context.Background()
 		convey.Convey("TestBaseRepositoryBaseQuery", t, func() {
 			convey.Convey("BaseQueryConds", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				pos, err := repo.BaseQuery(ctx, dependency.BaseOption{Conds: []any{2}, BatchSize: 3}, &testStructPo{})
+				repo := &BaseRepository[testStructPo]{}
+				pos, err := repo.BaseQuery(ctx, dependency.WithReadOnly(true), dependency.WithConds(2), dependency.WithBatchSize(3))
 				convey.So(len(pos), convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
 			})
 			convey.Convey("BaseQuerySelectedConds", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				pos, err := repo.BaseQuery(ctx, dependency.BaseOption{Selects: []string{`code`}, Conds: []any{2}}, &testStructPo{})
+				repo := &BaseRepository[testStructPo]{}
+				pos, err := repo.BaseQuery(ctx, dependency.WithConds(2), dependency.WithReadOnly(true), dependency.WithSelects("code"))
 				convey.So(len(pos), convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
-				if v := pos[0]; v != nil {
-					convey.So(v.Id, convey.ShouldEqual, 0)
-					convey.So(v.Code, convey.ShouldEqual, "x2")
-					convey.So(v.BizId, convey.ShouldEqual, 0)
-				}
+				v := pos[0]
+				convey.So(v.Id, convey.ShouldEqual, 0)
+				convey.So(v.Code, convey.ShouldEqual, "x2")
+				convey.So(v.BizId, convey.ShouldEqual, 0)
+
 			})
 			convey.Convey("BaseQueryOmitConds", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				pos, err := repo.BaseQuery(ctx, dependency.BaseOption{Omits: []string{`code`}, BatchSize: 4, Conds: []any{2}}, &testStructPo{})
+				repo := &BaseRepository[testStructPo]{}
+				pos, err := repo.BaseQuery(ctx, dependency.WithConds(2), dependency.WithReadOnly(true), dependency.WithOmits("code"), dependency.WithBatchSize(4))
 				convey.So(len(pos), convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
-				if v := pos[0]; v != nil {
-					convey.So(v.Id, convey.ShouldEqual, 2)
-					convey.So(v.Code, convey.ShouldEqual, "")
-					convey.So(v.BizId, convey.ShouldEqual, 5256)
-				}
+				v := pos[0]
+				convey.So(v.Id, convey.ShouldEqual, 2)
+				convey.So(v.Code, convey.ShouldEqual, "")
+				convey.So(v.BizId, convey.ShouldEqual, 5256)
+
 			})
 			convey.Convey("BaseQueryLockConds", func() {
-				repo := &BaseRepository[*testStructPo]{}
-				pos, err := repo.BaseQuery(ctx, dependency.BaseOption{Lock: true, Conds: []any{2}}, &testStructPo{})
+				repo := &BaseRepository[testStructPo]{}
+				pos, err := repo.BaseQuery(ctx, dependency.WithConds(2), dependency.WithLock(true))
 				convey.So(len(pos), convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
-				if v := pos[0]; v != nil {
-					convey.So(v.Id, convey.ShouldEqual, 3)
-					convey.So(v.Code, convey.ShouldEqual, "x3")
-				}
+				v := pos[0]
+				convey.So(v.Id, convey.ShouldEqual, 3)
+				convey.So(v.Code, convey.ShouldEqual, "x3")
+
 			})
 		})
 	})
