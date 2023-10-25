@@ -12,10 +12,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const (
-	BATCH_SIZE = 1000 // default batch size
-)
-
 var _ = dependency.IRepository[dependency.IEntity](&BaseRepository[dependency.IEntity]{}) // impl check
 
 type BaseRepository[T dependency.IEntity] struct{} // base repository
@@ -86,6 +82,7 @@ func (r *BaseRepository[T]) BaseQuery(ctx context.Context, opts ...dependency.Ba
 	return result, res.Error
 }
 
+// BuildConds
 func (r *BaseRepository[T]) BuildConds(ctx context.Context, opt *dependency.BaseOption) *gorm.DB {
 	var (
 		t  T
@@ -103,6 +100,7 @@ func (r *BaseRepository[T]) BuildConds(ctx context.Context, opt *dependency.Base
 	return db
 }
 
+// BuildFrmOption
 func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, opt *dependency.BaseOption) *gorm.DB {
 	db := r.BuildConds(ctx, opt)
 	if opt.Ignore {
@@ -121,12 +119,14 @@ func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, opt *dependency.
 	return db
 }
 
+// BuildFrmOptions
 func (r *BaseRepository[T]) BuildFrmOptions(ctx context.Context, opts ...dependency.BaseOptionFunc) *gorm.DB {
 	opt := dependency.NewBaseOption(opts...)
 	db := r.BuildFrmOption(ctx, opt)
 	return db
 }
 
+// Option2Page
 func Option2Page(db *gorm.DB, opt *dependency.BaseOption) *gorm.DB {
 	if opt.Page != nil {
 		for _, f := range opt.Page.GetSorts() {
@@ -138,29 +138,28 @@ func Option2Page(db *gorm.DB, opt *dependency.BaseOption) *gorm.DB {
 		}
 		db = db.Offset(int((opt.Page.GetPageIndex() - 1) * opt.Page.GetPageSize())).Limit(int(opt.Page.GetPageSize()))
 	} else {
-		if opt.ReadOnly && opt.BatchSize == 0 {
-			opt.BatchSize = BATCH_SIZE
-		}
-		if opt.BatchSize > 0 {
+		if opt.ReadOnly && opt.BatchSize > 0 {
 			db = db.Limit(int(opt.BatchSize))
 		}
 	}
 	return db
 }
 
+// CoreFrmCtx
 func CoreFrmCtx(ctx context.Context, id string) *gorm.DB {
 	return WithContext(ctx, id)
 }
+
+// ReadOnly
 func ReadOnly(ctx context.Context, id string) *gorm.DB {
 	return MySqlComponent.GetReader(id).Session(&gorm.Session{
 		QueryFields: !disableQueryFields,
 		Context:     ctx,
 	})
 }
+
+// BaseGroup
 func BaseGroup[T dependency.IEntity](f func(v ...*T) (int64, error), opt *dependency.BaseOption, p ...*T) (int64, error) {
-	if opt.BatchSize == 0 {
-		opt.BatchSize = BATCH_SIZE
-	}
 	if opt.BatchSize >= int64(len(p)) {
 		return f(p...)
 	}

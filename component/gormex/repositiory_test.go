@@ -284,7 +284,7 @@ func TestBaseRepositoryBaseQueryConds(t *testing.T) {
 		}).AddRow([]driver.Value{
 			2, "", 5256,
 		}...))
-		mock.ExpectQuery("SELECT \\* FROM `test_struct` WHERE `test_struct`.`id` = \\? LIMIT 1000 FOR UPDATE").WithArgs([]driver.Value{2}...).WillReturnRows(sqlmock.NewRows([]string{
+		mock.ExpectQuery("SELECT \\* FROM `test_struct` WHERE `test_struct`.`id` = \\? FOR UPDATE").WithArgs([]driver.Value{2}...).WillReturnRows(sqlmock.NewRows([]string{
 			"id", "code",
 		}).AddRow([]driver.Value{
 			3, "x3",
