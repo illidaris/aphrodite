@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/illidaris/aphrodite/component/dependency"
+	"github.com/illidaris/aphrodite/pkg/dependency"
 
 	"gorm.io/gorm"
 )

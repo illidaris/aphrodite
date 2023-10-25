@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/illidaris/aphrodite/component/dependency"
+	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/group"
 
 	"gorm.io/gorm"

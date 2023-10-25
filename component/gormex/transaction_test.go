@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/illidaris/aphrodite/component/dependency"
+	"github.com/illidaris/aphrodite/pkg/dependency"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/agiledragon/gomonkey/v2"

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/illidaris/extensions/pkg/logex"
+	"github.com/illidaris/aphrodite/pkg/logex"
 	iLog "github.com/illidaris/logger"
 	"go.uber.org/zap"
 	"gorm.io/gorm/logger"

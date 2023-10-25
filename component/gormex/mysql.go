@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/illidaris/aphrodite/component/dependency"
 	"github.com/illidaris/aphrodite/component/embedded"
+	"github.com/illidaris/aphrodite/pkg/dependency"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
