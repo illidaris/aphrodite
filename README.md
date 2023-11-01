@@ -150,3 +150,15 @@ f2 := func(subCtx context.Context) error {
 // 执行操作
 err := uok.Execute(ctx, f1, f2)
 ```
+
+特殊场景
+
+1. 批量插入，忽略已经存在的，只新增未入库的（覆盖导入建议使用删除，导入形式）。当插入的数量大于`opt.BatchSize`时会触发分组协程操作，默认使用多协程插入。
+
+```go
+repo := &BaseRepository[testStructPo]{}
+affect, err := repo.BaseCreate(ctx, pos,
+    dependency.WithIgnore(true), // 忽略插入失败，否则失败则返回错误并且不执行下去
+	dependency.WithBatchSize(1000), // 1000条为一组执行，默认1000
+)
+```
