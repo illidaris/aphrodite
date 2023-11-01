@@ -22,6 +22,9 @@ func (r *BaseRepository[T]) BaseCreate(ctx context.Context, ps []*T, opts ...dep
 		return 0, nil
 	}
 	opt := dependency.NewBaseOption(opts...)
+	if idgen, ok := any(ps[0]).(dependency.IGenerateID); ok && opt.IDGenerate != nil {
+		idgen.SetID(opt.IDGenerate(ctx))
+	}
 	return BaseGroup(func(v ...*T) (int64, error) {
 		db := r.BuildFrmOption(ctx, opt)
 		result := db.Create(v)
@@ -35,6 +38,9 @@ func (r *BaseRepository[T]) BaseSave(ctx context.Context, ps []*T, opts ...depen
 		return 0, nil
 	}
 	opt := dependency.NewBaseOption(opts...)
+	if idgen, ok := any(ps[0]).(dependency.IGenerateID); ok && opt.IDGenerate != nil {
+		idgen.SetID(opt.IDGenerate(ctx))
+	}
 	return BaseGroup(func(v ...*T) (int64, error) {
 		db := r.BuildFrmOption(ctx, opt)
 		result := db.Save(v)

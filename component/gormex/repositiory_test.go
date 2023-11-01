@@ -21,7 +21,7 @@ import (
 func TestBaseRepositoryBaseCreate(t *testing.T) {
 	mockDb(func(mock sqlmock.Sqlmock) {
 		mock.ExpectBegin()
-		mock.ExpectExec("INSERT INTO `test_struct`").WillReturnResult(sqlmock.NewResult(
+		mock.ExpectExec("INSERT INTO").WillReturnResult(sqlmock.NewResult(
 			1, 1,
 		))
 		mock.ExpectCommit()
@@ -40,6 +40,37 @@ func TestBaseRepositoryBaseCreate(t *testing.T) {
 			convey.Convey("BaseCreate", func() {
 				repo := &BaseRepository[testStructPo]{}
 				affect, err := repo.BaseCreate(ctx, pos)
+				convey.So(affect, convey.ShouldEqual, 1)
+				convey.So(err, convey.ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestBaseRepositoryBaseCreateWithIdGenerate(t *testing.T) {
+	mockDb(func(mock sqlmock.Sqlmock) {
+		mock.ExpectBegin()
+		mock.ExpectExec("INSERT INTO `test_struct`").WillReturnResult(sqlmock.NewResult(
+			1, 1,
+		))
+		mock.ExpectCommit()
+	}, func(err error) {
+		if err != nil {
+			t.Error(err)
+		}
+		ctx := context.Background()
+		pos := []*testStructIdGeneratePo{
+			{
+				BizId: 1,
+				Code:  "x1",
+			},
+		}
+		convey.Convey("TestBaseRepositoryBaseCreate", t, func() {
+			convey.Convey("BaseCreate", func() {
+				repo := &BaseRepository[testStructIdGeneratePo]{}
+				affect, err := repo.BaseCreate(ctx, pos, dependency.WithIDGenerate(func(ctx context.Context) any {
+					return int64(13333331)
+				}))
 				convey.So(affect, convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
 			})
@@ -458,6 +489,35 @@ func (s testStructDeledPo) TableName() string {
 }
 
 func (s testStructDeledPo) Database() string {
+	return "db"
+}
+
+type testStructIdGeneratePo struct {
+	Id       int64  `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"`       // identify id
+	BizId    int64  `json:"bizId" gorm:"column:bizId;type:bigint;comment:业务"`                            // game id
+	Code     string `json:"code" gorm:"column:code;type:varchar(32);comment:编码"`                         // code
+	Status   int32  `json:"status" gorm:"column:status;type:int;default:1;comment:状态"`                   // 状态 0-默认 1-未发布 2-预发布 3-发布中 4-已结束
+	CreateBy int64  `json:"createBy" gorm:"column:createBy;<-:create;index;type:bigint;comment:创建者"`     // 创建者
+	CreateAt int64  `json:"createAt" gorm:"column:createAt;<-:create;index;autoCreateTime;comment:创建时间"` // 创建时间
+	UpdateBy int64  `json:"updateBy" gorm:"column:updateBy;type:bigint;comment:修改者"`                     // 修改者
+	UpdateAt int64  `json:"updateAt" gorm:"column:updateAt;index;autoUpdateTime;comment:修改时间"`           // 修改时间
+	Describe string `json:"describe" gorm:"column:describe;type:varchar(255);comment:描述"`                // 描述
+}
+
+func (s testStructIdGeneratePo) ID() any {
+	return s.Id
+}
+
+func (s *testStructIdGeneratePo) SetID(id any) {
+	if v, ok := id.(int64); ok {
+		s.Id = v
+	}
+}
+func (s testStructIdGeneratePo) TableName() string {
+	return "test_struct"
+}
+
+func (s testStructIdGeneratePo) Database() string {
 	return "db"
 }
 

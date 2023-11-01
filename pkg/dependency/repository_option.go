@@ -1,5 +1,7 @@
 package dependency
 
+import "context"
+
 const (
 	BATCH_SIZE = 1000 // default batch size
 )
@@ -20,17 +22,18 @@ func NewBaseOption(opts ...BaseOptionFunc) *BaseOption {
 
 // BaseOption base repo exec
 type BaseOption struct {
-	Ignore      bool     `json:"ignore"`      // ignore if exist
-	Lock        bool     `json:"lock"`        // lock row
-	ReadOnly    bool     `json:"readOnly"`    // read only
-	Selects     []string `json:"selects"`     // select fields
-	Omits       []string `json:"omits"`       // omit fields select omit
-	Conds       []any    `json:"conds"`       // conds where
-	Page        IPage    `json:"page"`        // page
-	BatchSize   int64    `json:"batchSize"`   // exec by batch
-	TableName   string   `json:"tableName"`   // table name
-	DataBase    string   `json:"dataBase"`    // db name
-	ShardingKey []any    `json:"shardingKey"` // sharding key
+	Ignore      bool                          `json:"ignore"`      // ignore if exist
+	Lock        bool                          `json:"lock"`        // lock row
+	ReadOnly    bool                          `json:"readOnly"`    // read only
+	Selects     []string                      `json:"selects"`     // select fields
+	Omits       []string                      `json:"omits"`       // omit fields select omit
+	Conds       []any                         `json:"conds"`       // conds where
+	Page        IPage                         `json:"page"`        // page
+	BatchSize   int64                         `json:"batchSize"`   // exec by batch
+	TableName   string                        `json:"tableName"`   // table name
+	DataBase    string                        `json:"dataBase"`    // db name
+	ShardingKey []any                         `json:"shardingKey"` // sharding key
+	IDGenerate  func(ctx context.Context) any `json:"-"`           // id generate func
 }
 
 // WithIgnore
@@ -107,5 +110,12 @@ func WithDataBase(v string) BaseOptionFunc {
 func WithShardingKey(v ...any) BaseOptionFunc {
 	return func(o *BaseOption) {
 		o.ShardingKey = v
+	}
+}
+
+// WithIDGenerate
+func WithIDGenerate(v func(context.Context) any) BaseOptionFunc {
+	return func(o *BaseOption) {
+		o.IDGenerate = v
 	}
 }
