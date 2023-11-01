@@ -3,6 +3,7 @@ package gormex
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -337,6 +338,33 @@ func TestBaseRepositoryBaseQueryConds(t *testing.T) {
 	})
 }
 
+func TestBaseRepositorySharding(t *testing.T) {
+	mockDb(func(mock sqlmock.Sqlmock) {
+		mock.ExpectQuery("SELECT \\* FROM `test_struct_2` WHERE `test_struct_2`.`id` = \\? LIMIT 3").WithArgs([]driver.Value{2}...).WillReturnRows(sqlmock.NewRows([]string{
+			"id", "code",
+		}).AddRow([]driver.Value{
+			1, "x2",
+		}...))
+	}, func(err error) {
+		if err != nil {
+			t.Error(err)
+		}
+		ctx := context.Background()
+		convey.Convey("TestBaseRepositorySharding", t, func() {
+			convey.Convey("BaseQueryConds", func() {
+				repo := &BaseRepository[testStructShardingPo]{}
+				pos, err := repo.BaseQuery(ctx,
+					dependency.WithReadOnly(true),
+					dependency.WithConds(2),
+					dependency.WithShardingKey(2, 1),
+					dependency.WithBatchSize(3))
+				convey.So(len(pos), convey.ShouldEqual, 1)
+				convey.So(err, convey.ShouldBeNil)
+			})
+		})
+	})
+}
+
 // ================================= Mock =======================================
 
 func mockDb(f func(sqlmock.Sqlmock), exec func(error)) {
@@ -370,6 +398,42 @@ func mockDb(f func(sqlmock.Sqlmock), exec func(error)) {
 	})
 	defer f2.Reset()
 	exec(err)
+}
+
+type testStructShardingPo struct {
+	Id       int64  `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"`       // identify id
+	BizId    int64  `json:"bizId" gorm:"column:bizId;type:bigint;comment:业务"`                            // game id
+	Code     string `json:"code" gorm:"column:code;type:varchar(32);comment:编码"`                         // code
+	Status   int32  `json:"status" gorm:"column:status;type:int;default:1;comment:状态"`                   // 状态 0-默认 1-未发布 2-预发布 3-发布中 4-已结束
+	CreateBy int64  `json:"createBy" gorm:"column:createBy;<-:create;index;type:bigint;comment:创建者"`     // 创建者
+	CreateAt int64  `json:"createAt" gorm:"column:createAt;<-:create;index;autoCreateTime;comment:创建时间"` // 创建时间
+	UpdateBy int64  `json:"updateBy" gorm:"column:updateBy;type:bigint;comment:修改者"`                     // 修改者
+	UpdateAt int64  `json:"updateAt" gorm:"column:updateAt;index;autoUpdateTime;comment:修改时间"`           // 修改时间
+	Describe string `json:"describe" gorm:"column:describe;type:varchar(255);comment:描述"`                // 描述
+}
+
+func (s testStructShardingPo) ID() any {
+	return s.Id
+}
+
+func (s testStructShardingPo) TableName() string {
+	return "test_struct"
+}
+
+func (s testStructShardingPo) Database() string {
+	return "db"
+}
+func (s testStructShardingPo) TableSharding(keys ...any) string {
+	if len(keys) == 0 {
+		return s.TableName()
+	}
+	return fmt.Sprintf("%s_%v", s.TableName(), keys[0])
+}
+func (s testStructShardingPo) DbSharding(keys ...any) string {
+	if len(keys) < 2 {
+		return s.TableName()
+	}
+	return fmt.Sprintf("%s_%v", s.Database(), keys[1])
 }
 
 type testStructDeledPo struct {

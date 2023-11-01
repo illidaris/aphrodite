@@ -6,3 +6,11 @@ type IPo interface {
 	TableName() string
 	Database() string
 }
+
+type ITableSharding interface {
+	TableSharding(keys ...any) string
+}
+
+type IDbSharding interface {
+	DbSharding(keys ...any) string
+}
