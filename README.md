@@ -123,3 +123,30 @@ func (s *testStructIdGeneratePo) SetID(id any) {
 	}
 }
 ```
+
+使用事务
+
+```go
+uok := NewUnitOfWork("db") // 初始化一个事务对象，它将存于context中往下传递
+repo := &BaseRepository[testStructPo]{}
+// 执行操作1 返回err panic 则回滚
+f1 := func(subCtx context.Context) error {
+	_, _ = repo.BaseUpdate(subCtx, &testStructPo{
+		Id:     1,
+		Code:   "122",
+		Status: 2,
+	})
+	return right
+}
+// 执行操作2 返回err panic 则回滚
+f2 := func(subCtx context.Context) error {
+	_, err := repo.BaseCreate(subCtx, []*testStructPo{
+		{
+			Code: "1221",
+		},
+	})
+	return err
+}
+// 执行操作
+err := uok.Execute(ctx, f1, f2)
+```
