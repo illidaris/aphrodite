@@ -85,7 +85,7 @@ func shardingDb(p dependency.IPo, dbShardingKeys ...[]any) []string {
 func shardingTable(p dependency.IPo, db string) []*initTable {
 	ss := []*initTable{}
 	if sharding, ok := p.(dependency.ITableSharding); ok {
-		for i := 1; i <= int(sharding.TableTotal()); i++ {
+		for i := 0; i < int(sharding.TableTotal()); i++ {
 			s := &initTable{
 				Db: db, Table: sharding.TableSharding(i), P: p,
 			}
