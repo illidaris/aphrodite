@@ -387,7 +387,8 @@ func TestBaseRepositorySharding(t *testing.T) {
 				pos, err := repo.BaseQuery(ctx,
 					dependency.WithReadOnly(true),
 					dependency.WithConds(2),
-					dependency.WithShardingKey(2, 1),
+					dependency.WithDbShardingKey(1),
+					dependency.WithTbShardingKey(2),
 					dependency.WithBatchSize(3))
 				convey.So(len(pos), convey.ShouldEqual, 1)
 				convey.So(err, convey.ShouldBeNil)
@@ -431,6 +432,10 @@ func mockDb(f func(sqlmock.Sqlmock), exec func(error)) {
 	exec(err)
 }
 
+var _ = dependency.IPo(testStructShardingPo{})
+var _ = dependency.ITableSharding(testStructShardingPo{})
+var _ = dependency.IDbSharding(testStructShardingPo{})
+
 type testStructShardingPo struct {
 	Id       int64  `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"`       // identify id
 	BizId    int64  `json:"bizId" gorm:"column:bizId;type:bigint;comment:业务"`                            // game id
@@ -453,6 +458,10 @@ func (s testStructShardingPo) TableName() string {
 
 func (s testStructShardingPo) Database() string {
 	return "db"
+}
+
+func (s testStructShardingPo) TableTotal() uint32 {
+	return 20
 }
 func (s testStructShardingPo) TableSharding(keys ...any) string {
 	if len(keys) == 0 {

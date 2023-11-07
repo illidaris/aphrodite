@@ -95,7 +95,7 @@ func (r *BaseRepository[T]) BuildConds(ctx context.Context, opt *dependency.Base
 		db *gorm.DB
 	)
 	if sharding, ok := any(t).(dependency.IDbSharding); ok {
-		opt.DataBase = sharding.DbSharding(opt.ShardingKey...)
+		opt.DataBase = sharding.DbSharding(opt.DbShardingKey...)
 	}
 	dataBase := t.Database()
 	if opt.DataBase != "" {
@@ -108,7 +108,7 @@ func (r *BaseRepository[T]) BuildConds(ctx context.Context, opt *dependency.Base
 	}
 	db = db.Model(&t)
 	if sharding, ok := any(t).(dependency.ITableSharding); ok {
-		opt.TableName = sharding.TableSharding(opt.ShardingKey...)
+		opt.TableName = sharding.TableSharding(opt.TbShardingKey...)
 	}
 	if opt.TableName != "" {
 		db = db.Table(opt.TableName)

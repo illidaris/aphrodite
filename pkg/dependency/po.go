@@ -10,6 +10,7 @@ type IPo interface {
 // ITableSharding split table by keys
 type ITableSharding interface {
 	TableSharding(keys ...any) string
+	TableTotal() uint32
 }
 
 // IDbSharding split database by keys

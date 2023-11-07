@@ -32,15 +32,70 @@ func NewMySqlClient(dsn string, log logger.Interface) (*gorm.DB, error) {
 	return db, err
 }
 
-func SyncDbSruct(pos ...dependency.IPo) error {
-	total := len(pos)
-	for index, p := range pos {
-		db := MySqlComponent.GetWriter(p.Database())
+// SyncDbStruct
+func SyncDbStruct(dbShardingKeys [][]any, pos ...dependency.IPo) error {
+	ss := trans2Table(dbShardingKeys, pos...)
+	total := len(ss)
+	for index, s := range ss {
+		db := MySqlComponent.GetWriter(s.Db)
 		if db == nil {
 			return errors.New("db is nil")
 		}
-		err := db.Table(p.TableName()).AutoMigrate(p)
-		fmt.Printf("%s数据库初始化[%d/%d]：%s 初始化，%s\n", p.Database(), index+1, total, p.TableName(), err)
+		err := db.Table(s.Table).AutoMigrate(s.P)
+		_, _ = fmt.Printf("库%s表%s结构初始化[%d/%d]： 初始化，%s\n", s.Db, s.Table, index+1, total, err)
 	}
 	return nil
+}
+
+// initTable  init po table
+type initTable struct {
+	Table string
+	Db    string
+	P     dependency.IPo
+}
+
+// trans2Struct transform po to table
+func trans2Table(dbShardingKeys [][]any, pos ...dependency.IPo) []*initTable {
+	ss := []*initTable{}
+	for _, p := range pos {
+		dbs := shardingDb(p, dbShardingKeys...)
+		for _, db := range dbs {
+			is := shardingTable(p, db)
+			ss = append(ss, is...)
+		}
+	}
+	return ss
+}
+
+// shardingDb sharding db
+func shardingDb(p dependency.IPo, dbShardingKeys ...[]any) []string {
+	dbs := []string{}
+	if sharding, ok := p.(dependency.IDbSharding); ok {
+		for _, dbShardingKey := range dbShardingKeys {
+			db := sharding.DbSharding(dbShardingKey...)
+			dbs = append(dbs, db)
+		}
+	} else {
+		dbs = append(dbs, p.Database())
+	}
+	return dbs
+}
+
+// shardingTable sharding table
+func shardingTable(p dependency.IPo, db string) []*initTable {
+	ss := []*initTable{}
+	if sharding, ok := p.(dependency.ITableSharding); ok {
+		for i := 1; i <= int(sharding.TableTotal()); i++ {
+			s := &initTable{
+				Db: db, Table: sharding.TableSharding(i), P: p,
+			}
+			ss = append(ss, s)
+		}
+	} else {
+		s := &initTable{
+			Db: db, Table: p.TableName(), P: p,
+		}
+		ss = append(ss, s)
+	}
+	return ss
 }

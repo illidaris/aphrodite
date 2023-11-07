@@ -22,18 +22,19 @@ func NewBaseOption(opts ...BaseOptionFunc) *BaseOption {
 
 // BaseOption base repo exec
 type BaseOption struct {
-	Ignore      bool                          `json:"ignore"`      // ignore if exist
-	Lock        bool                          `json:"lock"`        // lock row
-	ReadOnly    bool                          `json:"readOnly"`    // read only
-	Selects     []string                      `json:"selects"`     // select fields
-	Omits       []string                      `json:"omits"`       // omit fields select omit
-	Conds       []any                         `json:"conds"`       // conds where
-	Page        IPage                         `json:"page"`        // page
-	BatchSize   int64                         `json:"batchSize"`   // exec by batch
-	TableName   string                        `json:"tableName"`   // table name
-	DataBase    string                        `json:"dataBase"`    // db name
-	ShardingKey []any                         `json:"shardingKey"` // sharding key
-	IDGenerate  func(ctx context.Context) any `json:"-"`           // id generate func
+	Ignore        bool                          `json:"ignore"`        // ignore if exist
+	Lock          bool                          `json:"lock"`          // lock row
+	ReadOnly      bool                          `json:"readOnly"`      // read only
+	Selects       []string                      `json:"selects"`       // select fields
+	Omits         []string                      `json:"omits"`         // omit fields select omit
+	Conds         []any                         `json:"conds"`         // conds where
+	Page          IPage                         `json:"page"`          // page
+	BatchSize     int64                         `json:"batchSize"`     // exec by batch
+	TableName     string                        `json:"tableName"`     // table name
+	DataBase      string                        `json:"dataBase"`      // db name
+	DbShardingKey []any                         `json:"dbShardingKey"` // db sharding key
+	TbShardingKey []any                         `json:"tbShardingKey"` // table sharding key
+	IDGenerate    func(ctx context.Context) any `json:"-"`             // id generate func
 }
 
 // WithIgnore
@@ -106,10 +107,17 @@ func WithDataBase(v string) BaseOptionFunc {
 	}
 }
 
-// WithShardingKey
-func WithShardingKey(v ...any) BaseOptionFunc {
+// WithDbShardingKey
+func WithDbShardingKey(v ...any) BaseOptionFunc {
 	return func(o *BaseOption) {
-		o.ShardingKey = v
+		o.DbShardingKey = v
+	}
+}
+
+// WithTbShardingKey
+func WithTbShardingKey(v ...any) BaseOptionFunc {
+	return func(o *BaseOption) {
+		o.TbShardingKey = v
 	}
 }
 
