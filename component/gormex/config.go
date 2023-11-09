@@ -1,7 +1,7 @@
 package gormex
 
 const (
-	DbTXPrefix string = "_db_transaction"
+	DbTXPrefix string = "_aphrodite_db_tx"
 )
 
 var (
