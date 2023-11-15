@@ -11,12 +11,18 @@ type Pager struct {
 }
 
 func (r Pager) GetTotal() int64 {
+	return r.TotalPage
+}
+
+func (r Pager) GetTotalRecord() int64 {
 	return r.TotalRecord
 }
+
 func (p *Pager) Paginator() *Pager {
 	p.TotalPage = getTotalPage(p.TotalRecord, p.GetSize())
 	return p
 }
+
 func getTotalPage(total int64, pageSize int64) int64 {
 	if pageSize == 0 {
 		return 1
