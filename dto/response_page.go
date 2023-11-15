@@ -27,9 +27,12 @@ func getTotalPage(total int64, pageSize int64) int64 {
 	return total/pageSize + 1
 }
 
-type RowPager RecordPager[IRow]
+type RecordPager[T IRow] struct {
+	Data []T `json:"data"`
+	Pager
+}
 
-func (r RowPager) ToRows() [][]string {
+func (r RecordPager[T]) ToRows() [][]string {
 	rows := [][]string{}
 	for _, record := range r.Data {
 		rows = append(rows, record.ToRow())
@@ -37,22 +40,7 @@ func (r RowPager) ToRows() [][]string {
 	return rows
 }
 
-func NewRowPager(index, size int64, total int64, records ...IRow) *RowPager {
-	res := new(RowPager)
-	res.PageIndex = index
-	res.PageSize = size
-	res.TotalRecord = total
-	res.Data = records
-	res.Paginator()
-	return res
-}
-
-type RecordPager[T any] struct {
-	Data []T `json:"data"`
-	Pager
-}
-
-func NewRecordPager[T any](index, size int64, total int64, records ...T) *RecordPager[T] {
+func NewRecordPager[T IRow](index, size int64, total int64, records ...T) *RecordPager[T] {
 	res := new(RecordPager[T])
 	res.PageIndex = index
 	res.PageSize = size
