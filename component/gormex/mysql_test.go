@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/smartystreets/goconvey/convey"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -72,6 +73,7 @@ func TestSyncDbSruct(t *testing.T) {
 }
 
 type testStruct2Po struct {
+	dependency.EmptyPo
 	Id int64 `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"` // identify id
 }
 
@@ -88,6 +90,7 @@ func (s testStruct2Po) Database() string {
 }
 
 type testStruct2PoWithSharding struct {
+	dependency.EmptyPo
 	Id int64 `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"` // identify id
 }
 

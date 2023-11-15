@@ -5,6 +5,29 @@ type IPo interface {
 	ID() any
 	TableName() string
 	Database() string
+	ToRow() []string
+	ToJson() string
+}
+
+var _ = IPo(&EmptyPo{})
+
+// EmptyPo empty impl
+type EmptyPo struct{}
+
+func (p EmptyPo) ID() any {
+	return nil
+}
+func (p EmptyPo) TableName() string {
+	return ""
+}
+func (p EmptyPo) Database() string {
+	return ""
+}
+func (p EmptyPo) ToRow() []string {
+	return []string{}
+}
+func (p EmptyPo) ToJson() string {
+	return ""
 }
 
 // ITableSharding split table by keys

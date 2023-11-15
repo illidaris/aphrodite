@@ -437,6 +437,7 @@ var _ = dependency.ITableSharding(testStructShardingPo{})
 var _ = dependency.IDbSharding(testStructShardingPo{})
 
 type testStructShardingPo struct {
+	dependency.EmptyPo
 	Id       int64  `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"`       // identify id
 	BizId    int64  `json:"bizId" gorm:"column:bizId;type:bigint;comment:业务"`                            // game id
 	Code     string `json:"code" gorm:"column:code;type:varchar(32);comment:编码"`                         // code
@@ -477,6 +478,7 @@ func (s testStructShardingPo) DbSharding(keys ...any) string {
 }
 
 type testStructDeledPo struct {
+	dependency.EmptyPo
 	Id        int64                 `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"`       // identify id
 	BizId     int64                 `json:"bizId" gorm:"column:bizId;type:bigint;comment:业务"`                            // game id
 	Code      string                `json:"code" gorm:"column:code;type:varchar(32);comment:编码"`                         // code
@@ -502,6 +504,7 @@ func (s testStructDeledPo) Database() string {
 }
 
 type testStructIdGeneratePo struct {
+	dependency.EmptyPo
 	Id       int64  `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"`       // identify id
 	BizId    int64  `json:"bizId" gorm:"column:bizId;type:bigint;comment:业务"`                            // game id
 	Code     string `json:"code" gorm:"column:code;type:varchar(32);comment:编码"`                         // code
@@ -531,6 +534,7 @@ func (s testStructIdGeneratePo) Database() string {
 }
 
 type testStructPo struct {
+	dependency.EmptyPo
 	Id       int64  `json:"id" gorm:"column:id;autoIncrement;type:bigint;primaryKey;comment:唯一ID"`       // identify id
 	BizId    int64  `json:"bizId" gorm:"column:bizId;type:bigint;comment:业务"`                            // game id
 	Code     string `json:"code" gorm:"column:code;type:varchar(32);comment:编码"`                         // code
