@@ -22,19 +22,52 @@ func NewBaseOption(opts ...BaseOptionFunc) *BaseOption {
 
 // BaseOption base repo exec
 type BaseOption struct {
-	Ignore        bool                          `json:"ignore"`        // ignore if exist
-	Lock          bool                          `json:"lock"`          // lock row
-	ReadOnly      bool                          `json:"readOnly"`      // read only
-	Selects       []string                      `json:"selects"`       // select fields
-	Omits         []string                      `json:"omits"`         // omit fields select omit
-	Conds         []any                         `json:"conds"`         // conds where
-	Page          IPage                         `json:"page"`          // page
-	BatchSize     int64                         `json:"batchSize"`     // exec by batch
-	TableName     string                        `json:"tableName"`     // table name
-	DataBase      string                        `json:"dataBase"`      // db name
-	DbShardingKey []any                         `json:"dbShardingKey"` // db sharding key
-	TbShardingKey []any                         `json:"tbShardingKey"` // table sharding key
-	IDGenerate    func(ctx context.Context) any `json:"-"`             // id generate func
+	Ignore         bool                          `json:"ignore"`        // ignore if exist
+	Lock           bool                          `json:"lock"`          // lock row
+	ReadOnly       bool                          `json:"readOnly"`      // read only
+	Selects        []string                      `json:"selects"`       // select fields
+	Omits          []string                      `json:"omits"`         // omit fields select omit
+	Conds          []any                         `json:"conds"`         // conds where
+	Page           IPage                         `json:"page"`          // page
+	SearchAfter    ISearchAfter                  `json:"searchAfter"`   // search after
+	BatchSize      int64                         `json:"batchSize"`     // exec by batch
+	TableName      string                        `json:"tableName"`     // table name
+	DataBase       string                        `json:"dataBase"`      // db name
+	DbShardingKey  []any                         `json:"dbShardingKey"` // db sharding key
+	TbShardingKey  []any                         `json:"tbShardingKey"` // table sharding key
+	IDGenerate     func(ctx context.Context) any `json:"-"`             // id generate func
+	IterativeFuncs []func(any)                   `json:"-"`             // iterative func
+}
+
+// GetDataBase
+func (opt BaseOption) GetDataBase(t IEntity) string {
+	if len(opt.DataBase) > 0 {
+		return opt.DataBase
+	}
+	opt.DataBase = t.Database()
+	if sharding, ok := any(t).(IDbSharding); ok {
+		opt.DataBase = sharding.DbSharding(opt.DbShardingKey...)
+	}
+	return opt.DataBase
+}
+
+// GetTableName
+func (opt BaseOption) GetTableName(t IEntity) string {
+	if len(opt.TableName) > 0 {
+		return opt.TableName
+	}
+	opt.TableName = t.TableName()
+	if sharding, ok := any(t).(ITableSharding); ok {
+		opt.TableName = sharding.TableSharding(opt.TbShardingKey...)
+	}
+	return opt.TableName
+}
+
+// Iterate
+func (opt BaseOption) Iterate(v any) {
+	for _, iterate := range opt.IterativeFuncs {
+		iterate(v)
+	}
 }
 
 // WithIgnore
@@ -86,6 +119,13 @@ func WithPage(v IPage) BaseOptionFunc {
 	}
 }
 
+// WithSearchAfter
+func WithSearchAfter(v ISearchAfter) BaseOptionFunc {
+	return func(o *BaseOption) {
+		o.SearchAfter = v
+	}
+}
+
 // WithBatchSize
 func WithBatchSize(v int64) BaseOptionFunc {
 	return func(o *BaseOption) {
@@ -125,5 +165,15 @@ func WithTbShardingKey(v ...any) BaseOptionFunc {
 func WithIDGenerate(v func(context.Context) any) BaseOptionFunc {
 	return func(o *BaseOption) {
 		o.IDGenerate = v
+	}
+}
+
+// WithIterativeFunc
+func WithIterativeFunc(v ...func(any)) BaseOptionFunc {
+	return func(o *BaseOption) {
+		if o.IterativeFuncs == nil {
+			o.IterativeFuncs = []func(any){}
+		}
+		o.IterativeFuncs = append(o.IterativeFuncs, v...)
 	}
 }

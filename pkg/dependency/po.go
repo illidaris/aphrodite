@@ -45,3 +45,30 @@ type IDbSharding interface {
 type IGenerateID interface {
 	SetID(id any)
 }
+
+/*
+Create a new index.
+
+	mapping := `{
+		"settings":{
+			"number_of_shards":1,
+			"number_of_replicas":0
+		},
+		"mappings":{
+			"properties":{
+				"tags":{
+					"type":"keyword"
+				},
+				"location":{
+					"type":"geo_point"
+				},
+				"suggest_field":{
+					"type":"completion"
+				}
+			}
+		}
+	}`
+*/
+type IMapping interface {
+	GetMapping() string
+}

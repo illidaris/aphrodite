@@ -88,6 +88,19 @@ func (r *BaseRepository[T]) BaseQuery(ctx context.Context, opts ...dependency.Ba
 	return result, res.Error
 }
 
+// BaseQueryWithCount
+func (r *BaseRepository[T]) BaseQueryWithCount(ctx context.Context, opts ...dependency.BaseOptionFunc) ([]T, int64, error) {
+	count, err := r.BaseCount(ctx, opts...)
+	if err != nil {
+		return nil, count, err
+	}
+	ts, err := r.BaseQuery(ctx, opts...)
+	if err != nil {
+		return ts, count, err
+	}
+	return ts, count, err
+}
+
 // BuildConds
 func (r *BaseRepository[T]) BuildConds(ctx context.Context, opt *dependency.BaseOption) *gorm.DB {
 	var (

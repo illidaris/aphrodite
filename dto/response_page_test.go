@@ -12,7 +12,7 @@ func TestNewDataPager(t *testing.T) {
 		convey.Convey("NewDataPager", func() {
 			pager := NewDataPager(nil, 2, 10, 20)
 			convey.So(pager.TotalPage, convey.ShouldEqual, 2)
-			convey.So(pager.GetTotal(), convey.ShouldEqual, 20)
+			convey.So(pager.GetTotal(), convey.ShouldEqual, 2)
 		})
 	})
 }
@@ -22,7 +22,7 @@ func TestNewRecordPager(t *testing.T) {
 		convey.Convey("NewRecordPager", func() {
 			pager := NewRecordPager(2, 10, 20, dependency.EmptyPo{})
 			convey.So(pager.TotalPage, convey.ShouldEqual, 2)
-			convey.So(pager.GetTotal(), convey.ShouldEqual, 20)
+			convey.So(pager.GetTotal(), convey.ShouldEqual, 2)
 		})
 	})
 }

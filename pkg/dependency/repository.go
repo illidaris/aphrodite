@@ -21,4 +21,5 @@ type IRepository[T IEntity] interface {
 	BaseDelete(ctx context.Context, p *T, opts ...BaseOptionFunc) (int64, error)
 	BaseCount(ctx context.Context, opts ...BaseOptionFunc) (int64, error)
 	BaseQuery(ctx context.Context, opts ...BaseOptionFunc) ([]T, error)
+	BaseQueryWithCount(ctx context.Context, opts ...BaseOptionFunc) ([]T, int64, error)
 }

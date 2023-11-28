@@ -9,6 +9,11 @@ type IPage interface {
 	GetSorts() []ISortField
 }
 
+type ISearchAfter interface {
+	GetSortValues() []any
+	GetSorts() []ISortField
+}
+
 type IPaginator interface {
 	IPage
 	GetTotalRecord() int64
