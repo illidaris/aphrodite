@@ -28,8 +28,7 @@ func ParseHit[T dependency.IEntity](h *elastic.SearchHit) *T {
 
 // CoreFrmCtx
 func CoreFrmCtx(ctx context.Context, id string) *elastic.Client {
-	es, _ := elastic.NewClient()
-	return es
+	return WithContext(ctx, id)
 }
 
 func WithQuery(conds ...any) elastic.Query {
@@ -62,4 +61,23 @@ func WithSort(sorts ...dependency.ISortField) []elastic.Sorter {
 		esSorts = append(esSorts, elastic.NewFieldSort("_id").Asc())
 	}
 	return esSorts
+}
+
+func NewContext(ctx context.Context, id string, newdb *elastic.Client) context.Context {
+	if newdb != nil {
+		return context.WithValue(ctx, GetDbTX(id), newdb)
+	}
+	return context.WithValue(ctx, GetDbTX(id), ElasticComponent.GetWriter(id))
+}
+
+func WithContext(ctx context.Context, id string) *elastic.Client {
+	v := ctx.Value(GetDbTX(id))
+	if d, ok := v.(*elastic.Client); ok {
+		return d
+	}
+	db := ElasticComponent.GetWriter(id)
+	if db == nil {
+		return nil
+	}
+	return db
 }
