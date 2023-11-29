@@ -1,10 +1,15 @@
 package convert
 
-import "time"
+import (
+	"time"
+
+	"github.com/spf13/cast"
+)
 
 const (
 	DefaultTimeFormat = "2006-01-02 15:04:05"
 	NumberTimeFormat  = "20060102150405"
+	DateTimeFormat    = "20060102"
 )
 
 // ToCST set east +8
@@ -27,6 +32,11 @@ func TimeFormat(t time.Time) string {
 }
 
 // TimeNumber format number
-func TimeNumber(t time.Time) string {
-	return t.Format(NumberTimeFormat)
+func TimeNumber(t time.Time) int64 {
+	return cast.ToInt64(t.Format(NumberTimeFormat))
+}
+
+// TimeNumber format number date
+func TimeDate(t time.Time) int64 {
+	return cast.ToInt64(t.Format(DateTimeFormat))
 }

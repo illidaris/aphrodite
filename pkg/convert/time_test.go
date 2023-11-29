@@ -28,6 +28,7 @@ func TestFormUnixToString(t *testing.T) {
 		ts := int64(1696905231)
 		def := "2023-10-10 10:33:51"
 		num := "20231010103351"
+		date := "20231010"
 		convey.Convey("DefaultTimeFormat", func() {
 			ft := FormUnixToString(ts, DefaultTimeFormat)
 			convey.So(ft, convey.ShouldEqual, def)
@@ -35,6 +36,10 @@ func TestFormUnixToString(t *testing.T) {
 		convey.Convey("NumberTimeFormat", func() {
 			ft := FormUnixToString(ts, NumberTimeFormat)
 			convey.So(ft, convey.ShouldEqual, num)
+		})
+		convey.Convey("DateTimeFormat", func() {
+			ft := FormUnixToString(ts, DateTimeFormat)
+			convey.So(ft, convey.ShouldEqual, date)
 		})
 	})
 }
@@ -45,7 +50,8 @@ func TestTimeFormat(t *testing.T) {
 		ts := int64(1696905231)
 		t := time.Unix(ts, 0)
 		def := "2023-10-10 10:33:51"
-		num := "20231010103351"
+		num := int64(20231010103351)
+		date := int64(20231010)
 		convey.Convey("DefaultTimeFormat", func() {
 			ft := TimeFormat(t)
 			convey.So(ft, convey.ShouldEqual, def)
@@ -53,6 +59,10 @@ func TestTimeFormat(t *testing.T) {
 		convey.Convey("NumberTimeFormat", func() {
 			ft := TimeNumber(t)
 			convey.So(ft, convey.ShouldEqual, num)
+		})
+		convey.Convey("DateTimeFormat", func() {
+			ft := TimeDate(t)
+			convey.So(ft, convey.ShouldEqual, date)
 		})
 	})
 }
