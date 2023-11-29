@@ -12,6 +12,14 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+var (
+	disableQueryFields = false
+)
+
+func SetDisableQueryFields() {
+	disableQueryFields = true
+}
+
 var MySqlComponent = embedded.NewComponent[*gorm.DB]()
 
 // reference docs: https://github.com/go-sql-driver/mysql#dsn-data-source-name

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/illidaris/aphrodite/pkg/contextex"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 
 	"gorm.io/gorm"
@@ -11,8 +12,8 @@ import (
 
 var _ = dependency.IUnitOfWork(&GormTransactionImpl{})
 
-func GetDbTX(id string) ContextKey {
-	return ContextKey(fmt.Sprintf("%s_%s", DbTXPrefix, id))
+func GetDbTX(id string) contextex.ContextKey {
+	return contextex.DbTxID.ID(id)
 }
 func NewUnitOfWork(id string) dependency.IUnitOfWork {
 	return &GormTransactionImpl{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/illidaris/aphrodite/pkg/contextex"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/olivere/elastic/v7"
 )
@@ -80,4 +81,8 @@ func WithContext(ctx context.Context, id string) *elastic.Client {
 		return nil
 	}
 	return db
+}
+
+func GetDbTX(id string) contextex.ContextKey {
+	return contextex.ElasticID.ID(id)
 }
