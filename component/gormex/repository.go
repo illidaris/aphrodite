@@ -26,7 +26,11 @@ func (r *BaseRepository[T]) BaseCreate(ctx context.Context, ps []*T, opts ...dep
 		idgen.SetID(opt.IDGenerate(ctx))
 	}
 	return BaseGroup(func(v ...*T) (int64, error) {
-		db := r.BuildFrmOption(ctx, opt)
+		var t *T
+		if len(v) > 0 {
+			t = v[0]
+		}
+		db := r.BuildFrmOption(ctx, t, opt)
 		result := db.Create(v)
 		return result.RowsAffected, result.Error
 	}, opt, ps...)
@@ -42,7 +46,11 @@ func (r *BaseRepository[T]) BaseSave(ctx context.Context, ps []*T, opts ...depen
 		idgen.SetID(opt.IDGenerate(ctx))
 	}
 	return BaseGroup(func(v ...*T) (int64, error) {
-		db := r.BuildFrmOption(ctx, opt)
+		var t *T
+		if len(v) > 0 {
+			t = v[0]
+		}
+		db := r.BuildFrmOption(ctx, t, opt)
 		result := db.Save(v)
 		return result.RowsAffected, result.Error
 	}, opt, ps...)
@@ -50,14 +58,14 @@ func (r *BaseRepository[T]) BaseSave(ctx context.Context, ps []*T, opts ...depen
 
 // BaseUpdate
 func (r *BaseRepository[T]) BaseUpdate(ctx context.Context, p *T, opts ...dependency.BaseOptionFunc) (int64, error) {
-	result := r.BuildFrmOptions(ctx, opts...).Updates(p)
+	result := r.BuildFrmOptions(ctx, p, opts...).Updates(p)
 	return result.RowsAffected, result.Error
 }
 
 // BaseGet
 func (r *BaseRepository[T]) BaseGet(ctx context.Context, opts ...dependency.BaseOptionFunc) (*T, error) {
 	var t T
-	db := r.BuildFrmOptions(ctx, opts...)
+	db := r.BuildFrmOptions(ctx, nil, opts...)
 	res := db.First(&t)
 	if res.RowsAffected == 0 {
 		return nil, nil
@@ -67,7 +75,7 @@ func (r *BaseRepository[T]) BaseGet(ctx context.Context, opts ...dependency.Base
 
 // BaseDelete
 func (r *BaseRepository[T]) BaseDelete(ctx context.Context, p *T, opts ...dependency.BaseOptionFunc) (int64, error) {
-	result := r.BuildFrmOptions(ctx, opts...).Delete(p)
+	result := r.BuildFrmOptions(ctx, p, opts...).Delete(p)
 	return result.RowsAffected, result.Error
 }
 
@@ -75,7 +83,7 @@ func (r *BaseRepository[T]) BaseDelete(ctx context.Context, p *T, opts ...depend
 func (r *BaseRepository[T]) BaseCount(ctx context.Context, opts ...dependency.BaseOptionFunc) (int64, error) {
 	var count int64
 	opt := dependency.NewBaseOption(opts...)
-	db := r.BuildConds(ctx, opt)
+	db := r.BuildConds(ctx, nil, opt)
 	res := db.Count(&count)
 	return count, res.Error
 }
@@ -83,7 +91,7 @@ func (r *BaseRepository[T]) BaseCount(ctx context.Context, opts ...dependency.Ba
 // BaseQuery
 func (r *BaseRepository[T]) BaseQuery(ctx context.Context, opts ...dependency.BaseOptionFunc) ([]T, error) {
 	result := []T{}
-	db := r.BuildFrmOptions(ctx, opts...)
+	db := r.BuildFrmOptions(ctx, nil, opts...)
 	res := db.Find(&result)
 	return result, res.Error
 }
@@ -102,15 +110,17 @@ func (r *BaseRepository[T]) BaseQueryWithCount(ctx context.Context, opts ...depe
 }
 
 // BuildConds
-func (r *BaseRepository[T]) BuildConds(ctx context.Context, opt *dependency.BaseOption) *gorm.DB {
+func (r *BaseRepository[T]) BuildConds(ctx context.Context, t *T, opt *dependency.BaseOption) *gorm.DB {
 	var (
-		t  T
 		db *gorm.DB
 	)
+	if t == nil {
+		t = new(T)
+	}
 	if sharding, ok := any(t).(dependency.IDbSharding); ok {
 		opt.DataBase = sharding.DbSharding(opt.DbShardingKey...)
 	}
-	dataBase := t.Database()
+	dataBase := (*t).Database()
 	if opt.DataBase != "" {
 		dataBase = opt.DataBase
 	}
@@ -133,8 +143,8 @@ func (r *BaseRepository[T]) BuildConds(ctx context.Context, opt *dependency.Base
 }
 
 // BuildFrmOption
-func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, opt *dependency.BaseOption) *gorm.DB {
-	db := r.BuildConds(ctx, opt)
+func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, t *T, opt *dependency.BaseOption) *gorm.DB {
+	db := r.BuildConds(ctx, t, opt)
 	if opt.Ignore {
 		db = db.Clauses(clause.Insert{Modifier: "IGNORE"})
 	}
@@ -152,9 +162,9 @@ func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, opt *dependency.
 }
 
 // BuildFrmOptions
-func (r *BaseRepository[T]) BuildFrmOptions(ctx context.Context, opts ...dependency.BaseOptionFunc) *gorm.DB {
+func (r *BaseRepository[T]) BuildFrmOptions(ctx context.Context, t *T, opts ...dependency.BaseOptionFunc) *gorm.DB {
 	opt := dependency.NewBaseOption(opts...)
-	db := r.BuildFrmOption(ctx, opt)
+	db := r.BuildFrmOption(ctx, t, opt)
 	return db
 }
 
