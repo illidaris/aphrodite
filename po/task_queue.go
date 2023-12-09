@@ -13,8 +13,8 @@ type TaskQueueMessage struct {
 	dependency.EmptyPo
 	IDAutoSection `gorm:"embedded"`
 	RawBizSection `gorm:"embedded"`
-	Category      uint32 `json:"category" gorm:"column:category;type:int;index(biz);comment:类别"` // 类别 // 1-导出任务
-	Name          string `json:"name" gorm:"column:name;type:varchar(36);index(biz);comment:任务"` // 业务类型
+	Category      uint32 `json:"category" gorm:"column:category;type:int;index:biz;comment:类别"` // 类别 // 1-导出任务
+	Name          string `json:"name" gorm:"column:name;type:varchar(36);index:biz;comment:任务"` // 业务类型
 	Args          string `json:"args" gorm:"column:args;type:text;comment:参数"`
 	LockSection   `gorm:"embedded"`
 	CreateBy      int64 `json:"createBy" gorm:"column:createBy;<-:create;index;type:bigint;comment:创建者"`     // 创建者

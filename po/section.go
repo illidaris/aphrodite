@@ -13,7 +13,7 @@ func (p IDAutoSection) ID() any {
 
 // RawBizSection
 type RawBizSection struct {
-	BizId uint64 `json:"bizId" gorm:"column:bizId;type:bigint;index(biz);comment:业务ID"` // biz id
+	BizId uint64 `json:"bizId" gorm:"column:bizId;type:bigint;index:biz;comment:业务ID"` // biz id
 }
 
 func (s RawBizSection) Database() string {
