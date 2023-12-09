@@ -1,6 +1,16 @@
 package po
 
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/illidaris/aphrodite/pkg/dependency"
+)
+
+var _ = dependency.ITask(&TaskQueueMessage{})
+
 type TaskQueueMessage struct {
+	dependency.EmptyPo
 	IDAutoSection `gorm:"embedded"`
 	BizSection    `gorm:"embedded"`
 	Category      int32  `json:"category" gorm:"column:category;type:int;index(biz);comment:类别"` // 类别 // 1-导出任务
@@ -19,4 +29,35 @@ func (s TaskQueueMessage) TableName() string {
 
 func (s TaskQueueMessage) ID() any {
 	return s.Id
+}
+
+func (s TaskQueueMessage) GetTimeout() time.Duration {
+	return time.Duration(s.Timeout) * time.Second
+}
+
+func (s TaskQueueMessage) GetBizId() int64 {
+	return s.BizId
+}
+
+func (s TaskQueueMessage) GetCategory() int32 {
+	return s.Category
+}
+
+func (s TaskQueueMessage) GetName() string {
+	return s.Name
+}
+
+func (p TaskQueueMessage) Database() string {
+	return ""
+}
+func (p TaskQueueMessage) ToRow() []string {
+	return []string{}
+}
+
+func (p *TaskQueueMessage) ToJson() string {
+	bs, err := json.Marshal(p)
+	if err != nil {
+		return ""
+	}
+	return string(bs)
 }
