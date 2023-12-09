@@ -13,7 +13,7 @@ type TaskQueueMessage struct {
 	dependency.EmptyPo
 	IDAutoSection `gorm:"embedded"`
 	RawBizSection `gorm:"embedded"`
-	Category      int32  `json:"category" gorm:"column:category;type:int;index(biz);comment:类别"` // 类别 // 1-导出任务
+	Category      uint32 `json:"category" gorm:"column:category;type:int;index(biz);comment:类别"` // 类别 // 1-导出任务
 	Name          string `json:"name" gorm:"column:name;type:varchar(36);index(biz);comment:任务"` // 业务类型
 	Args          string `json:"args" gorm:"column:args;type:text;comment:参数"`
 	LockSection   `gorm:"embedded"`
@@ -35,11 +35,11 @@ func (s TaskQueueMessage) GetTimeout() time.Duration {
 	return time.Duration(s.Timeout) * time.Second
 }
 
-func (s TaskQueueMessage) GetBizId() int64 {
+func (s TaskQueueMessage) GetBizId() uint64 {
 	return s.BizId
 }
 
-func (s TaskQueueMessage) GetCategory() int32 {
+func (s TaskQueueMessage) GetCategory() uint32 {
 	return s.Category
 }
 

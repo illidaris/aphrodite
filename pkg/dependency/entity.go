@@ -9,7 +9,7 @@ type IEntity interface {
 type ITask interface {
 	IEntity
 	GetTimeout() time.Duration
-	GetBizId() int64
-	GetCategory() int32
+	GetBizId() uint64
+	GetCategory() uint32
 	GetName() string
 }

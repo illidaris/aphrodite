@@ -4,7 +4,7 @@ import "github.com/spf13/cast"
 
 // IDAutoSection
 type IDAutoSection struct {
-	Id int64 `json:"id" gorm:"column:id;type:bigint;primaryKey;comment:唯一ID"` // 主键ID
+	Id uint64 `json:"id" gorm:"column:id;type:bigint;primaryKey;comment:唯一ID"` // 主键ID
 }
 
 func (p IDAutoSection) ID() any {
@@ -13,7 +13,7 @@ func (p IDAutoSection) ID() any {
 
 // RawBizSection
 type RawBizSection struct {
-	BizId int64 `json:"bizId" gorm:"column:bizId;type:bigint;index(biz);comment:业务ID"` // biz id
+	BizId uint64 `json:"bizId" gorm:"column:bizId;type:bigint;index(biz);comment:业务ID"` // biz id
 }
 
 func (s RawBizSection) Database() string {
