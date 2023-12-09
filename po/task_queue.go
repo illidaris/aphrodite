@@ -12,7 +12,7 @@ var _ = dependency.ITask(&TaskQueueMessage{})
 type TaskQueueMessage struct {
 	dependency.EmptyPo
 	IDAutoSection `gorm:"embedded"`
-	BizSection    `gorm:"embedded"`
+	RawBizSection `gorm:"embedded"`
 	Category      int32  `json:"category" gorm:"column:category;type:int;index(biz);comment:类别"` // 类别 // 1-导出任务
 	Name          string `json:"name" gorm:"column:name;type:varchar(36);index(biz);comment:任务"` // 业务类型
 	Args          string `json:"args" gorm:"column:args;type:text;comment:参数"`

@@ -11,13 +11,18 @@ func (p IDAutoSection) ID() any {
 	return p.Id
 }
 
-// BizSection
-type BizSection struct {
+// RawBizSection
+type RawBizSection struct {
 	BizId int64 `json:"bizId" gorm:"column:bizId;type:bigint;index(biz);comment:业务ID"` // biz id
 }
 
-func (s BizSection) Database() string {
+func (s RawBizSection) Database() string {
 	return ""
+}
+
+// BizSection
+type BizSection struct {
+	RawBizSection
 }
 
 func (s BizSection) DbSharding(keys ...any) string {
