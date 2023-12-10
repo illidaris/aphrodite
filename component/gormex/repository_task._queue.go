@@ -75,8 +75,6 @@ func (r TaskQueueRepository[T]) ReportExecResult(ctx context.Context, id int64, 
 		map[string]interface{}{
 			"lastExecAt": now.Unix(),
 			"lastError":  lastErrorStr,
-			"locker":     "-",
-			"expire":     0,
 		})
 	return result.RowsAffected, result.Error
 }
