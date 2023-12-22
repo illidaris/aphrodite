@@ -34,9 +34,11 @@ type GormTransactionImpl struct {
 // Execute An execution function is passed in, and transactions are executed within the function.
 func (t *GormTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAction) (e error) {
 	tx := t.db.WithContext(ctx).Begin()
+	tx.Logger.Info(ctx, "transaction begin")
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
+			tx.Logger.Warn(ctx, fmt.Sprintf("transaction panic rollback %s", r))
 			if err, ok := r.(error); ok {
 				e = err
 			} else {
@@ -51,8 +53,11 @@ func (t *GormTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAc
 	for _, f := range fs {
 		if err := f(ctx); err != nil {
 			tx.Rollback()
+			tx.Logger.Warn(ctx, "transaction rollback", err.Error())
 			return err
 		}
 	}
-	return tx.Commit().Error
+	e = tx.Commit().Error
+	tx.Logger.Info(ctx, "transaction commit")
+	return
 }
