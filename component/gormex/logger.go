@@ -15,7 +15,7 @@ import (
 var _ = logger.Interface(&GormLogger{})
 
 const (
-	SqlLogFormat = "elapsed:%dms,affect:%d,err:%s,sql:%s"
+	SqlLogFormat = "elapsed:%dms, affect:%d, err:%v, sql:%s"
 )
 
 func NewLogger() logger.Interface {

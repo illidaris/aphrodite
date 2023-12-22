@@ -38,11 +38,11 @@ func (t *GormTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAc
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
-			tx.Logger.Warn(ctx, fmt.Sprintf("transaction panic rollback %s", r))
+			tx.Logger.Warn(ctx, fmt.Sprintf("transaction panic rollback %v", r))
 			if err, ok := r.(error); ok {
 				e = err
 			} else {
-				e = fmt.Errorf("unkonw %s", r)
+				e = fmt.Errorf("unkonw %v", r)
 			}
 		}
 	}()
@@ -53,7 +53,7 @@ func (t *GormTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAc
 	for _, f := range fs {
 		if err := f(ctx); err != nil {
 			tx.Rollback()
-			tx.Logger.Warn(ctx, "transaction rollback", err.Error())
+			tx.Logger.Warn(ctx, fmt.Sprintf("transaction rollback %v", err))
 			return err
 		}
 	}

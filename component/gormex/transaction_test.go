@@ -60,6 +60,51 @@ func TestNewUnitOfWork(t *testing.T) {
 	})
 }
 
+func TestNewUnitOfWorkPanic(t *testing.T) {
+	mockDbWithTrans(func(mock sqlmock.Sqlmock) {
+		mock.ExpectBegin()
+		mock.ExpectExec("UPDATE `test_struct`").WillReturnResult(sqlmock.NewResult(
+			1, 1,
+		))
+		mock.ExpectExec("INSERT INTO `test_struct`").WillReturnResult(sqlmock.NewResult(
+			1, 1,
+		))
+		mock.ExpectCommit()
+	}, func(err error) {
+		if err != nil {
+			t.Error(err)
+		}
+		ctx := context.Background()
+		ctx = core.TraceID.SetString(ctx, "test111")
+		convey.Convey("TestBaseRepositoryBaseCreate Panic", t, func() {
+			convey.Convey("BaseCreate Panic", func() {
+				uok := NewUnitOfWork("db")
+				repo := &BaseRepository[testStructPo]{}
+				f1 := func(subCtx context.Context) error {
+					_, err := repo.BaseUpdate(subCtx, &testStructPo{
+						Code:   "122",
+						Status: 2,
+					}, dependency.WithConds(2))
+					return err
+				}
+				f2 := func(subCtx context.Context) error {
+					a := []int{1, 2, 3}
+					a[5] = 6
+					_, err := repo.BaseCreate(subCtx, []*testStructPo{
+						{
+							Id:   2,
+							Code: "1221",
+						},
+					})
+					return err
+				}
+				err := uok.Execute(ctx, f1, f2)
+				convey.So(err, convey.ShouldNotBeNil)
+			})
+		})
+	})
+}
+
 func TestNewUnitOfWorkRollback(t *testing.T) {
 	mockDbWithTrans(func(mock sqlmock.Sqlmock) {
 		mock.ExpectBegin()
