@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/illidaris/aphrodite/pkg/dependency"
+	"github.com/illidaris/core"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/agiledragon/gomonkey/v2"
@@ -30,7 +31,7 @@ func TestNewUnitOfWork(t *testing.T) {
 			t.Error(err)
 		}
 		ctx := context.Background()
-
+		ctx = core.TraceID.SetString(ctx, "test111")
 		convey.Convey("TestBaseRepositoryBaseCreate", t, func() {
 			convey.Convey("BaseCreate", func() {
 				uok := NewUnitOfWork("db")
