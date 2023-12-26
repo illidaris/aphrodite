@@ -1,5 +1,11 @@
 package structure
 
+type ISortedUniqueArray[T any] interface {
+	IUniqueArray[T]
+	Swap(i, j int)
+	Less(i, j int) bool
+}
+
 type IUniqueArray[T any] interface {
 	Append(vs ...T)
 	ToSlice() []T
@@ -40,7 +46,7 @@ type IItemSection[T comparable] interface {
 	Sort() int
 }
 
-func NewUniqueAnyArray[T comparable]() IUniqueArray[IItemSection[T]] {
+func NewUniqueAnyArray[T comparable]() ISortedUniqueArray[IItemSection[T]] {
 	res := new(UniqueAnyArray[T])
 	res.s = []IItemSection[T]{}
 	res.m = map[T]struct{}{}
