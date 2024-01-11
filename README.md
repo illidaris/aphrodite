@@ -162,3 +162,5 @@ affect, err := repo.BaseCreate(ctx, pos,
 	dependency.WithBatchSize(1000), // 1000条为一组执行，默认1000
 )
 ```
+
+### kafkaex sarama 扩展组件
