@@ -7,8 +7,11 @@ import (
 )
 
 // IsAdult 判断身份证号是否是成年人
+// IsAdult 判断一个人是否成年
 func IsAdult(idCard string) bool {
+	// 根据身份证号获取年龄
 	age := GetAgeWithIDCard18(idCard, ToCST(time.Now()))
+	// 返回年龄是否大于等于18岁
 	return age >= 18
 }
 

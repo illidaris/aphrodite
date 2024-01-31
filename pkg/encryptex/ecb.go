@@ -4,7 +4,19 @@ import (
 	"crypto/cipher"
 )
 
+// ECBEncrypt 使用ECB模式加密算法对给定的数据进行加密。
+// 参数：
+//   - block：加密算法的块
+//   - src：要加密的数据
+//   - padding：填充方式
+//
+// 返回值：
+//   - []byte：加密后的数据
+//   - error：如果加密算法的块为nil，则返回ErrBlockNil错误
 func ECBEncrypt(block cipher.Block, src []byte, padding string) ([]byte, error) {
+	if block == nil {
+		return nil, ErrBlockNil
+	}
 	blockSize := block.BlockSize()
 	src = Padding(padding, src, blockSize)
 
@@ -16,12 +28,24 @@ func ECBEncrypt(block cipher.Block, src []byte, padding string) ([]byte, error) 
 	return encryptData, nil
 }
 
+// ECBDecrypt 使用ECB模式解密算法对给定的数据进行解密操作。
+// 参数：
+//   - block：加密算法的块密码。
+//   - src：待解密的数据。
+//   - padding：填充方式。
+//
+// 返回值：
+//   - []byte：解密后的数据。
+//   - error：解密操作过程中遇到的错误。
 func ECBDecrypt(block cipher.Block, src []byte, padding string) ([]byte, error) {
 	dst := make([]byte, len(src))
 
+	// 创建ECB解密器
 	mode := NewECBDecrypter(block)
+	// 对数据进行解密操作
 	mode.CryptBlocks(dst, src)
 
+	// 对解密后的数据进行填充操作
 	return UnPadding(padding, dst)
 }
 
@@ -30,17 +54,24 @@ type ecb struct {
 	blockSize int
 }
 
+// newECB 返回一个初始化的 ecb 结构体指针。
+// 参数 b 为密码块，ecb 结构体的 b 字段与参数 b 相同。
+// 如果 b 不为 nil，则将密码块的块大小赋值给 ecb 结构体的 blockSize 字段。
+// 返回初始化的 ecb 结构体指针。
 func newECB(b cipher.Block) *ecb {
-	return &ecb{
-		b:         b,
-		blockSize: b.BlockSize(),
+	res := &ecb{
+		b: b,
 	}
+	if b != nil {
+		res.blockSize = b.BlockSize()
+	}
+	return res
 }
 
 type ecbEncrypter ecb
 
-// NewECBEncrypter returns a BlockMode which encrypts in electronic code book
-// mode, using the given Block.
+// NewECBEncrypter 返回一个使用ECB模式的加密器。
+// 参数b为一个cipher.Block类型的参数，用于初始化加密器。
 func NewECBEncrypter(b cipher.Block) cipher.BlockMode {
 	return (*ecbEncrypter)(newECB(b))
 }
@@ -63,8 +94,9 @@ func (x *ecbEncrypter) CryptBlocks(dst, src []byte) {
 
 type ecbDecrypter ecb
 
-// NewECBDecrypter returns a BlockMode which decrypts in electronic code book
-// mode, using the given Block.
+// NewECBDecrypter 返回一个ECB解密器的实例。
+// 参数b为一个cipher.Block，用于初始化解密器。
+// 返回一个cipher.BlockMode类型的指针。
 func NewECBDecrypter(b cipher.Block) cipher.BlockMode {
 	return (*ecbDecrypter)(newECB(b))
 }

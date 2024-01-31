@@ -13,8 +13,11 @@ const (
 )
 
 // ToCST set east +8
+// ToCST 将给定的时间转换为 CST 区域的时间
 func ToCST(t time.Time) time.Time {
+	// 创建一个固定时区 CST，时区偏移为 8 小时
 	zone := time.FixedZone("CST", 8*3600)
+	// 将给定时间转换为 CST 区域的时间
 	return t.In(zone)
 }
 

@@ -2,34 +2,73 @@ package kafkaex
 
 import (
 	"context"
-
-	"time"
+	"sync"
 
 	"github.com/IBM/sarama"
-	"github.com/spf13/cast"
 )
 
-var m *KafkaManager
+var defaultManager *KafkaManager
+var once sync.Once
 
-func InitManager(brokers ...string) *KafkaManager {
-	m = NewKafkaManager(cast.ToStringSlice(brokers)...)
-	m.Init()
-	m.NewProducer()
-	return m
+// InitDefaultManager 初始化默认的 KafkaManager 实例，并返回其指针。
+// 参数：
+//   - user: 用户名
+//   - password: 密码
+//   - brokers: Kafka broker 的地址列表
+//
+// 返回值：
+//   - *KafkaManager: KafkaManager 实例的指针
+//   - error: 错误信息，如果没有错误发生则为 nil
+func InitDefaultManager(user, password string, brokers ...string) (*KafkaManager, error) {
+	// 使用 sync.Once 来保证函数只会执行一次
+	once.Do(func() {
+		// 创建一个新的 KafkaManager 实例，并传入 SASL 配置和 broker 地址列表
+		m, err := NewKafkaManager(NewSASLConfig(user, password), brokers...)
+		if err != nil {
+			println("InitDefaultManager_NewKafkaManager", err.Error())
+			return
+		}
+		// 创建 KafkaManager 实例的生产者
+		err = m.NewProducer()
+		if err != nil {
+			println("InitDefaultManager_NewProducer", err.Error())
+			return
+		}
+		// 将 KafkaManager 实例赋值给默认的实例变量
+		defaultManager = m
+	})
+	// 返回 KafkaManager 实例的指针和 nil 错误
+	return GetKafkaManager(), nil
 }
 
+// GetKafkaManager 返回一个指向 KafkaManager 的指针
 func GetKafkaManager() *KafkaManager {
-	return m
+	return defaultManager
 }
 
-// NewKafkaManager new a kafka mq manager
-func NewKafkaManager(brokers ...string) *KafkaManager {
-	m = &KafkaManager{
+// NewKafkaManager 创建一个新的 KafkaManager 实例。
+// 参数 config 是 Kafka 客户端配置。
+// 参数 brokers 是 Kafka broker 的地址列表。
+// 返回 KafkaManager 实例和可能的错误。
+func NewKafkaManager(config *sarama.Config, brokers ...string) (*KafkaManager, error) {
+	// 创建 Kafka 客户端
+	client, err := sarama.NewClient(brokers, config)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建 KafkaManager 实例
+	manager := &KafkaManager{
 		brokers:       brokers,
 		groups:        map[string]IConsumerGroup{},
 		consumerClose: []func(){},
 	}
-	return m
+
+	// 设置 Kafka 客户端和配置到 KafkaManager 实例
+	manager.client = client
+	manager.config = config
+
+	return manager, nil
 }
 
 // KafkaManager kafka mq manager
@@ -40,35 +79,6 @@ type KafkaManager struct {
 	groups        map[string]IConsumerGroup // consumer group map
 	consumerClose []func()                  // consumer close func
 	producerSync  sarama.SyncProducer
-}
-
-// init init
-func (m *KafkaManager) Init() error {
-	config := sarama.NewConfig()
-	config.Net.SASL.Enable = true
-	config.Net.SASL.Mechanism = sarama.SASLTypePlaintext
-	config.Net.SASL.User = "kafka"
-	config.Net.SASL.Password = "pUuQNY9zG3NvObZxDwBhiHSBD6UxsQVx"
-
-	// 同一个消费组中消费者订阅不同的topic,那么需要Sticky策略，该策略会使得分配更加均匀
-	config.Consumer.Group.Rebalance.Strategy = sarama.NewBalanceStrategySticky()
-	config.Consumer.Offsets.Initial = sarama.OffsetOldest
-
-	config.Producer.RequiredAcks = sarama.WaitForAll
-	config.Producer.Retry.Max = 0                   // 重新发送的次数
-	config.Producer.Timeout = time.Millisecond * 10 // 等待 WaitForAck的时间
-	config.Producer.Return.Successes = true
-	config.Producer.Partitioner = sarama.NewHashPartitioner
-
-	// TODO: CONFIGS
-	m.config = config
-	client, err := sarama.NewClient(m.brokers, m.config)
-	if err != nil {
-		return err
-	}
-	m.client = client
-	//client.LeastLoadedBroker().CreateTopics(&sarama.CreateTopicsRequest{})
-	return nil
 }
 
 func (m *KafkaManager) NewProducer() error {
@@ -101,7 +111,11 @@ func (m *KafkaManager) NewConsumer(groupid string, handler ConsumeHandler, topic
 		}
 		m.groups[groupid] = group
 	}
-	if err := m.groups[groupid].CreateConsumer(handler, topics...); err != nil {
+	group := m.groups[groupid]
+	if group == nil {
+		return ErrGroupNoFound
+	}
+	if err := group.CreateConsumer(handler, topics...); err != nil {
 		return err
 	}
 	return nil
@@ -145,5 +159,9 @@ func (m *KafkaManager) GetConsumer(groupid, id string) (IConsumer, error) {
 	if _, ok := m.groups[groupid]; !ok {
 		return nil, ErrGroupNoFound
 	}
-	return m.groups[groupid].GetConsumer(id), nil
+	group := m.groups[groupid]
+	if group == nil {
+		return nil, ErrGroupNoFound
+	}
+	return group.GetConsumer(id), nil
 }

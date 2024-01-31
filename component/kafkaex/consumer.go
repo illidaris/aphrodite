@@ -119,10 +119,13 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 	// Do not move the code below to a goroutine.
 	// The `ConsumeClaim` itself is called within a goroutine, see:
 	// https://github.com/IBM/sarama/blob/main/consumer_group.go#L27-L29
+	ctx := session.Context()
+	if ctx == nil || ctx.Done() == nil {
+		return ErrCtxNil
+	}
 	for {
 		select {
 		case message, ok := <-claim.Messages():
-			ctx := session.Context()
 			if !ok {
 				logger.Printf("message channel was closed")
 				return nil
@@ -153,7 +156,7 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 		// Should return when `session.Context()` is done.
 		// If not, will raise `ErrRebalanceInProgress` or `read tcp <ip>:<port>: i/o timeout` when kafka rebalance. see:
 		// https://github.com/IBM/sarama/issues/1192
-		case <-session.Context().Done():
+		case <-ctx.Done():
 			return nil
 		}
 	}

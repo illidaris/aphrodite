@@ -12,6 +12,9 @@ type IUniqueArray[T any] interface {
 	Len() int
 }
 
+// NewUniqueArray函数用于创建一个IUniqueArray[T]类型的实例。
+// 该实例是一个UniqueArray[T]类型的指针，其中UniqueArray[T]是一个包含一个元素的切片和一个键为T类型值、值为空结构体的映射。
+// 返回创建的实例。
 func NewUniqueArray[T comparable]() IUniqueArray[T] {
 	res := new(UniqueArray[T])
 	res.s = []T{}
@@ -46,6 +49,7 @@ type IItemSection[T comparable] interface {
 	Sort() int
 }
 
+// NewUniqueAnyArray创建一个新的可排序的唯一数组，数组元素类型为T，T必须是可比较的类型。
 func NewUniqueAnyArray[T comparable]() ISortedUniqueArray[IItemSection[T]] {
 	res := new(UniqueAnyArray[T])
 	res.s = []IItemSection[T]{}

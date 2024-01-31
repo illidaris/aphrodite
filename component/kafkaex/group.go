@@ -16,6 +16,14 @@ type IConsumerGroup interface {
 	ConsumerMap() map[string]IConsumer
 }
 
+// NewConsumerGroup 创建一个新的ConsumerGroup实例。
+// 参数：
+//   - groupid：消费者组的ID
+//   - client：Sarama客户端实例
+//
+// 返回值：
+//   - *ConsumerGroup：新创建的ConsumerGroup实例
+//   - error：如果创建失败，返回错误信息
 func NewConsumerGroup(groupid string, client sarama.Client) (*ConsumerGroup, error) {
 	g := &ConsumerGroup{
 		id: groupid,
@@ -43,6 +51,9 @@ func (g *ConsumerGroup) ID() string {
 func (g *ConsumerGroup) Close() {
 	g.rw.Lock()
 	defer g.rw.Unlock()
+	if g.core == nil {
+		return
+	}
 	if err := g.core.Close(); err != nil {
 		logger.Error(context.TODO(), "ConsumerGroup[%s].CLose %v", g.id, err)
 	}

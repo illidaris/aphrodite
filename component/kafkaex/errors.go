@@ -8,6 +8,7 @@ const (
 	ERR_CONSUMER_EXIST   = "consumer exist"
 	ERR_CONSUMER_NOFOUND = "consumer no found"
 	ERR_GROUP_NOFOUND    = "group no found"
+	ERR_CTX_NIL          = "ctx is nil"
 )
 
 var (
@@ -16,4 +17,5 @@ var (
 	ErrConsumerExist   = errors.New(ERR_CONSUMER_EXIST)
 	ErrConsumerNoFound = errors.New(ERR_CONSUMER_NOFOUND)
 	ErrGroupNoFound    = errors.New(ERR_GROUP_NOFOUND)
+	ErrCtxNil          = errors.New(ERR_CTX_NIL)
 )
