@@ -7,8 +7,13 @@ import (
 	"github.com/IBM/sarama"
 )
 
-var defaultManager *KafkaManager
-var once sync.Once
+var (
+	defaultManager *KafkaManager
+	// onceInitManager is a sync.Once variable used to ensure that the init() function is only called once.
+	onceInitManager       sync.Once
+	onceInitSyncProducer  sync.Once
+	onceInitAsyncProducer sync.Once
+)
 
 // InitDefaultManager 初始化默认的 KafkaManager 实例，并返回其指针。
 // 参数：
@@ -21,17 +26,11 @@ var once sync.Once
 //   - error: 错误信息，如果没有错误发生则为 nil
 func InitDefaultManager(user, password string, brokers ...string) (*KafkaManager, error) {
 	// 使用 sync.Once 来保证函数只会执行一次
-	once.Do(func() {
+	onceInitManager.Do(func() {
 		// 创建一个新的 KafkaManager 实例，并传入 SASL 配置和 broker 地址列表
 		m, err := NewKafkaManager(NewSASLConfig(user, password), brokers...)
 		if err != nil {
 			println("InitDefaultManager_NewKafkaManager", err.Error())
-			return
-		}
-		// 创建 KafkaManager 实例的生产者
-		err = m.NewProducer()
-		if err != nil {
-			println("InitDefaultManager_NewProducer", err.Error())
 			return
 		}
 		// 将 KafkaManager 实例赋值给默认的实例变量
@@ -79,23 +78,62 @@ type KafkaManager struct {
 	groups        map[string]IConsumerGroup // consumer group map
 	consumerClose []func()                  // consumer close func
 	producerSync  sarama.SyncProducer
+	producerAsync sarama.AsyncProducer
 }
 
-func (m *KafkaManager) NewProducer() error {
-	producer, err := sarama.NewSyncProducerFromClient(m.client)
-	if err != nil {
-		return err
-	}
-	m.producerSync = producer
-	return nil
+// GetSyncProducer returns a synchronized Kafka producer.
+func (m *KafkaManager) GetSyncProducer() sarama.SyncProducer {
+	// Use a sync.Once to ensure that the producer is initialized only once.
+	onceInitSyncProducer.Do(func() {
+		// Create a new synchronized Kafka producer from the existing client.
+		producer, err := sarama.NewSyncProducerFromClient(m.client)
+		if err != nil {
+			// Print an error message if the producer creation fails.
+			println("InitDefaultManager_NewProducer", err.Error())
+			return
+		}
+		// Store the producer in the KafkaManager instance.
+		m.producerSync = producer
+	})
+	// Return the synchronized Kafka producer.
+	return m.producerSync
 }
 
+// GetASyncProducer returns an asynchronous Kafka producer.
+func (m *KafkaManager) GetASyncProducer() sarama.AsyncProducer {
+	// Ensure that the async producer is initialized only once.
+	onceInitAsyncProducer.Do(func() {
+		// Create a new async producer from the Kafka client.
+		producer, err := sarama.NewAsyncProducerFromClient(m.client)
+		if err != nil {
+			// Print an error message if the producer creation fails.
+			println("InitDefaultManager_NewProducer_Async", err.Error())
+			return
+		}
+		// Start consuming messages from the producer.
+		producer.Input()
+		// Store the created producer in the KafkaManager instance.
+		m.producerAsync = producer
+	})
+	// Return the KafkaManager's async producer.
+	return m.producerAsync
+}
+
+// Publish is a function that publishes a message to a Kafka topic.
+// It takes a context, topic name, key, and message as input and returns an error.
 func (m *KafkaManager) Publish(ctx context.Context, topic, key string, msg []byte) error {
-	mqMsg := &sarama.ProducerMessage{
-		Topic: topic,
-		Key:   sarama.StringEncoder(key),
-		Value: sarama.ByteEncoder(msg)}
-	partition, offset, err := m.producerSync.SendMessage(mqMsg)
+	var (
+		mqMsg = &sarama.ProducerMessage{
+			Topic: topic,
+			Key:   sarama.StringEncoder(key),
+			Value: sarama.ByteEncoder(msg),
+		}
+		producer = m.producerSync
+	)
+	if producer == nil {
+		return ErrProducerNoFound
+	}
+	partition, offset, err := producer.SendMessage(mqMsg)
 	if err != nil {
 		return err
 	}
@@ -103,6 +141,8 @@ func (m *KafkaManager) Publish(ctx context.Context, topic, key string, msg []byt
 	return nil
 }
 
+// NewConsumer creates a new consumer for the specified group ID and handler.
+// It returns an error if the group ID is not found or if there is an error creating the consumer group.
 func (m *KafkaManager) NewConsumer(groupid string, handler ConsumeHandler, topics ...string) error {
 	if _, ok := m.groups[groupid]; !ok {
 		group, err := NewConsumerGroup(groupid, m.client)
@@ -121,6 +161,8 @@ func (m *KafkaManager) NewConsumer(groupid string, handler ConsumeHandler, topic
 	return nil
 }
 
+// ConsumersGo starts all consumers in the KafkaManager.
+// It loops through all groups and consumers, and starts each consumer's goroutine.
 func (m *KafkaManager) ConsumersGo() {
 	for _, g := range m.groups {
 		if g == nil {
@@ -138,6 +180,8 @@ func (m *KafkaManager) ConsumersGo() {
 	}
 }
 
+// ConsumerClose closes all consumers in the KafkaManager.
+// It loops through all groups and consumers, and closes each consumer.
 func (m *KafkaManager) ConsumerClose() {
 	for _, g := range m.groups {
 		if g == nil {
@@ -155,6 +199,8 @@ func (m *KafkaManager) ConsumerClose() {
 	}
 }
 
+// GetConsumer returns the consumer with the specified ID from the specified group ID.
+// It returns an error if the group ID or consumer ID is not found.
 func (m *KafkaManager) GetConsumer(groupid, id string) (IConsumer, error) {
 	if _, ok := m.groups[groupid]; !ok {
 		return nil, ErrGroupNoFound

@@ -18,6 +18,8 @@ func NewSASLConfig(user, password string) *sarama.Config {
 	config.Net.SASL.User = user
 	// 设置SASL密码
 	config.Net.SASL.Password = password
+	// 允许没有收到acks而可以同时发送的最大batch数
+	// config.Net.MaxOpenRequests = 5
 	// 返回配置
 	return config
 }
@@ -25,15 +27,16 @@ func NewSASLConfig(user, password string) *sarama.Config {
 // DefaultConfig 返回一个默认的Sarama配置对象
 func DefaultConfig() *sarama.Config {
 	config := sarama.NewConfig()
-
 	// 设置消费组的重平衡策略为Sticky，使得分配更加均匀
 	config.Consumer.Group.Rebalance.Strategy = sarama.NewBalanceStrategySticky()
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+	// 生产者设置
+	config.Producer.RequiredAcks = sarama.WaitForAll // 设置生产者发送消息时的确认策略为所有副本都确认，0-无需应答 1-本地确认 -1-全部确认
+	config.Producer.Timeout = time.Second * 5        // 等待 WaitForAck的时间
+	// config.Producer.MaxMessageBytes = 1000000 // 这个参数必须要小于broker中的`message.max.bytes`
+	config.Producer.Partitioner = sarama.NewHashPartitioner // 分区策略
+	config.Producer.Retry.Max = 3                           // 重新发送的次数
 
-	config.Producer.RequiredAcks = sarama.WaitForAll
-	config.Producer.Retry.Max = 3             // 重新发送的次数
-	config.Producer.Timeout = time.Second * 3 // 等待 WaitForAck的时间
 	config.Producer.Return.Successes = true
-	config.Producer.Partitioner = sarama.NewHashPartitioner
 	return config
 }
