@@ -25,9 +25,10 @@ type ConsumeHandler func(context.Context, *Message) (ReceiptStatus, error)
 var _ = IConsumer(&Consumer{})
 
 // NewConsumer new consumer
-func NewConsumer(group *ConsumerGroup, handler ConsumeHandler, topics ...string) *Consumer {
+func NewConsumer(id string, group *ConsumerGroup, handler ConsumeHandler, topics ...string) *Consumer {
+	// uuid.NewDCEPerson()
 	c := &Consumer{
-		id:       uuid.NewString(),
+		id:       id,
 		execFunc: handler,
 		topics:   topics,
 	}

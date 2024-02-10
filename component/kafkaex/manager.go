@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/IBM/sarama"
+	"github.com/illidaris/aphrodite/pkg/convert"
 )
 
 var (
@@ -128,7 +129,7 @@ func (m *KafkaManager) Publish(ctx context.Context, topic, key string, msg []byt
 			Key:   sarama.StringEncoder(key),
 			Value: sarama.ByteEncoder(msg),
 		}
-		producer = m.producerSync
+		producer = m.GetSyncProducer()
 	)
 	if producer == nil {
 		return ErrProducerNoFound
@@ -143,7 +144,7 @@ func (m *KafkaManager) Publish(ctx context.Context, topic, key string, msg []byt
 
 // NewConsumer creates a new consumer for the specified group ID and handler.
 // It returns an error if the group ID is not found or if there is an error creating the consumer group.
-func (m *KafkaManager) NewConsumer(groupid string, handler ConsumeHandler, topics ...string) error {
+func (m *KafkaManager) NewConsumer(id, groupid string, handler ConsumeHandler, topics ...string) error {
 	if _, ok := m.groups[groupid]; !ok {
 		group, err := NewConsumerGroup(groupid, m.client)
 		if err != nil {
@@ -155,7 +156,10 @@ func (m *KafkaManager) NewConsumer(groupid string, handler ConsumeHandler, topic
 	if group == nil {
 		return ErrGroupNoFound
 	}
-	if err := group.CreateConsumer(handler, topics...); err != nil {
+	if id == "" {
+		id = convert.RandomID()
+	}
+	if err := group.CreateConsumer(id, handler, topics...); err != nil {
 		return err
 	}
 	return nil

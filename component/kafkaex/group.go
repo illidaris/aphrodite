@@ -11,7 +11,7 @@ var _ = IConsumerGroup(&ConsumerGroup{})
 
 type IConsumerGroup interface {
 	ID() string
-	CreateConsumer(h ConsumeHandler, topics ...string) error
+	CreateConsumer(id string, h ConsumeHandler, topics ...string) error
 	GetConsumer(id string) IConsumer
 	ConsumerMap() map[string]IConsumer
 }
@@ -59,10 +59,10 @@ func (g *ConsumerGroup) Close() {
 	}
 }
 
-func (g *ConsumerGroup) CreateConsumer(h ConsumeHandler, topics ...string) error {
+func (g *ConsumerGroup) CreateConsumer(id string, h ConsumeHandler, topics ...string) error {
 	g.rw.Lock()
 	defer g.rw.Unlock()
-	consumer := NewConsumer(g, h, topics...)
+	consumer := NewConsumer(id, g, h, topics...)
 	if g.consumerMap == nil {
 		g.consumerMap = map[string]IConsumer{}
 	}
