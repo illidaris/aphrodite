@@ -6,6 +6,7 @@ import (
 	"github.com/illidaris/aphrodite/component/gormex"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/po"
+	"github.com/illidaris/core"
 )
 
 var _ = dependency.IUnitOfWork(EventTransactionImpl{})
@@ -37,8 +38,10 @@ func (t EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAc
 	if err != nil {
 		return err
 	}
-	go repo.BaseDelete(ctx, ent,
-		dependency.WithDataBase(t.id),
-	)
+	go func(e *po.MqMessage) {
+		newCtx := core.TraceID.SetString(context.Background(), e.TraceId)
+		_, _ = repo.BaseDelete(newCtx, e,
+			dependency.WithDataBase(e.Db))
+	}(ent)
 	return nil
 }
