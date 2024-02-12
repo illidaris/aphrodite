@@ -6,11 +6,10 @@ import (
 
 // IMQProducerRepository
 type IMQProducerRepository[T IEventMessage] interface {
-	InsertAction(ctx context.Context, db string, t *T) (func(context.Context) error, any)
+	IRepository[T]
+	InsertAction(ctx context.Context, db string, t *T) func(context.Context) error
 	WaitExecWithLock(ctx context.Context, t T, batch int) (string, int64, error)
 	FindLockeds(ctx context.Context, locker string) ([]T, error)
-	Clear(ctx context.Context, id any) (int64, error)
-	ClearByLocker(ctx context.Context, locker string) (int64, error)
 }
 
 // action

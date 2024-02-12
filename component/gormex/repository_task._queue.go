@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/illidaris/aphrodite/dto"
 	"github.com/illidaris/aphrodite/pkg/dependency"
-	"github.com/illidaris/core"
 	"gorm.io/gorm"
 )
 
@@ -17,8 +16,9 @@ type TaskQueueRepository[T dependency.ITask] struct {
 }
 
 // CountByCreator 请求者当前执行数量
-func (r TaskQueueRepository[T]) CountByCreator(ctx context.Context, createBy, status int64) (int64, error) {
-	return r.BaseCount(ctx, dependency.WithConds("createBy = ? and status = ?", createBy, status))
+func (r TaskQueueRepository[T]) CountByCreator(ctx context.Context, t T, createBy, status int64) (int64, error) {
+	return r.BaseCount(ctx, dependency.WithConds("createBy = ? and status = ?", createBy, status),
+		dependency.WithDataBase(t.Database()))
 }
 
 // WaitExecWithLock 需要锁定的记录
@@ -33,6 +33,7 @@ func (r TaskQueueRepository[T]) WaitExecWithLock(ctx context.Context, t T, batch
 			t.GetCategory(),
 			t.GetName()),
 		dependency.WithPage(page),
+		dependency.WithDataBase(t.Database()),
 	}
 	result := r.BuildFrmOptions(ctx, new(T), opts...).Updates(map[string]interface{}{
 		// 如果记录里设定了超时时间则采用改超时时间，当前时间均采用数据库时间，保障所有节点计算时间一致【防止节点时间不一致】
@@ -46,15 +47,6 @@ func (r TaskQueueRepository[T]) WaitExecWithLock(ctx context.Context, t T, batch
 // FindLockeds 找到被锁定的记录
 func (r TaskQueueRepository[T]) FindLockeds(ctx context.Context, locker string) ([]T, error) {
 	return r.BaseQuery(ctx, dependency.WithConds("locker = ?", locker))
-}
-
-func (r TaskQueueRepository[T]) Clear(ctx context.Context, id any) (int64, error) {
-	return r.BaseDelete(ctx, new(T), dependency.WithConds("id = ?", id))
-}
-
-func (r TaskQueueRepository[T]) ClearByLocker(ctx context.Context, locker string) (int64, error) {
-	newCtx := core.TraceID.SetString(context.Background(), core.TraceID.GetString(ctx))
-	return r.BaseDelete(newCtx, new(T), dependency.WithConds("locker = ?", locker))
 }
 
 // ReportExecResult 汇报执行结果

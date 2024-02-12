@@ -13,6 +13,7 @@ type TaskQueueMessage struct {
 	dependency.EmptyPo
 	IDAutoSection `gorm:"embedded"`
 	RawBizSection `gorm:"embedded"`
+	Db            string `json:"db" gorm:"column:db;type:varchar(36);comment:db"`               // db
 	Category      uint32 `json:"category" gorm:"column:category;type:int;index:biz;comment:类别"` // 类别 // 1-导出任务
 	Name          string `json:"name" gorm:"column:name;type:varchar(36);index:biz;comment:任务"` // 业务类型
 	Key           string `json:"key" gorm:"column:key;type:varchar(36);comment:分区ID"`           // 分区ID
@@ -27,6 +28,10 @@ type TaskQueueMessage struct {
 
 func (s TaskQueueMessage) TableName() string {
 	return "task_queue_message"
+}
+
+func (p TaskQueueMessage) Database() string {
+	return p.Db
 }
 
 func (s TaskQueueMessage) ID() any {
@@ -47,10 +52,6 @@ func (s TaskQueueMessage) GetCategory() uint32 {
 
 func (s TaskQueueMessage) GetName() string {
 	return s.Name
-}
-
-func (p TaskQueueMessage) Database() string {
-	return ""
 }
 
 func (p TaskQueueMessage) ToRow() []string {
