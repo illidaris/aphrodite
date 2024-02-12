@@ -16,6 +16,7 @@ var _ = dependency.IEventMessage(&MqMessage{})
 func NewMqMessage(
 	ctx context.Context,
 	bizId uint64,
+	db string,
 	category uint32,
 	topic, key string,
 	args any,
@@ -27,6 +28,7 @@ func NewMqMessage(
 	p.Expire = time.Now().Add(timeout).Unix()
 	p.Timeout = int64(timeout.Seconds())
 	p.BizId = bizId
+	p.Db = db
 	p.Name = topic
 	p.Key = key
 	p.Category = category
