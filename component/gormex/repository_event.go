@@ -14,23 +14,23 @@ import (
 )
 
 type EventRepository struct {
-	BaseRepository[po.MqMessage[any]]
+	BaseRepository[po.MqMessage]
 }
 
 func (r EventRepository) InsertAction(ctx context.Context, message dependency.IEventMessage) (func(context.Context) error, string) {
-	p := &po.MqMessage[any]{}
+	p := &po.MqMessage{}
 	p.TraceId = core.TraceID.GetString(ctx)
 	p.Locker = uuid.NewString()
 	p.BizId = message.GetBizId()
 	p.Topic = message.GetTopic()
 	p.Key = string(message.GetKey())
-	p.Args = message
+	p.Args = string(message.GetValue())
 	p.Expire = time.Now().Add(message.GetTimeout()).Unix()
 	p.Timeout = int64(message.GetTimeout().Seconds())
 	return func(ctx context.Context) error {
 		_, err := r.BaseCreate(
 			ctx,
-			[]*po.MqMessage[any]{p},
+			[]*po.MqMessage{p},
 			dependency.WithDbShardingKey(message.GetBizId()),
 			dependency.WithIgnore(true),
 		)
@@ -43,7 +43,7 @@ func (r EventRepository) WaitExecWithLock(ctx context.Context, bizId, category, 
 	var (
 		locker = uuid.NewString()
 		page   = &dto.Page{PageIndex: 1, PageSize: int64(batch), Sorts: []string{"createAt|asc"}}
-		p      = &po.MqMessage[any]{}
+		p      = &po.MqMessage{}
 	)
 	p.BizId = uint64(bizId)
 	opts := []dependency.BaseOptionFunc{
@@ -74,10 +74,10 @@ func (r EventRepository) FindLockeds(ctx context.Context, locker string) ([]depe
 }
 
 func (r EventRepository) Clear(ctx context.Context, id string) (int64, error) {
-	return r.BaseDelete(ctx, &po.MqMessage[any]{}, dependency.WithConds("id = ?", id))
+	return r.BaseDelete(ctx, &po.MqMessage{}, dependency.WithConds("id = ?", id))
 }
 
 func (r EventRepository) ClearByLocker(ctx context.Context, locker string) (int64, error) {
 	newCtx := core.TraceID.SetString(context.Background(), core.TraceID.GetString(ctx))
-	return r.BaseDelete(newCtx, &po.MqMessage[any]{}, dependency.WithConds("locker = ?", locker))
+	return r.BaseDelete(newCtx, &po.MqMessage{}, dependency.WithConds("locker = ?", locker))
 }
