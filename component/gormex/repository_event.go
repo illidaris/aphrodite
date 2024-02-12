@@ -12,9 +12,9 @@ type EventRepository[T dependency.IEventMessage] struct {
 	TaskQueueRepository[T]
 }
 
-func (r EventRepository[T]) InsertAction(ctx context.Context, t *T) (func(context.Context) error, any) {
+func (r EventRepository[T]) InsertAction(ctx context.Context, db string, t *T) (func(context.Context) error, any) {
 	return func(ctx context.Context) error {
-		_, err := r.BaseCreate(ctx, []*T{t})
+		_, err := r.BaseCreate(ctx, []*T{t}, dependency.WithDataBase(db))
 		return err
-	}, (*t).ID()
+	}, any(t).(dependency.IPo).ID()
 }

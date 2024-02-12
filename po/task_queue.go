@@ -52,6 +52,7 @@ func (s TaskQueueMessage) GetName() string {
 func (p TaskQueueMessage) Database() string {
 	return ""
 }
+
 func (p TaskQueueMessage) ToRow() []string {
 	return []string{}
 }

@@ -5,24 +5,27 @@ import (
 
 	"github.com/illidaris/aphrodite/component/gormex"
 	"github.com/illidaris/aphrodite/pkg/dependency"
+	"github.com/illidaris/aphrodite/po"
 )
 
-var _ = dependency.IUnitOfWork(&EventTransactionImpl{})
+var _ = dependency.IUnitOfWork(EventTransactionImpl{})
 
-func NewUnitOfWork(event dependency.IEventMessage) dependency.IUnitOfWork {
+func NewUnitOfWork(id string, event *po.MqMessage) dependency.IUnitOfWork {
 	return &EventTransactionImpl{
+		id:    id,
 		event: event,
 	}
 }
 
 type EventTransactionImpl struct {
-	event dependency.IEventMessage
+	id    string
+	event *po.MqMessage
 }
 
-func (t *EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAction) (e error) {
+func (t EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAction) (e error) {
 	ent := t.event
-	uow := gormex.NewUnitOfWork(ent.Database())
-	action, id := repo.InsertAction(ctx, &ent)
+	uow := gormex.NewUnitOfWork(t.id)
+	action, id := repo.InsertAction(ctx, t.id, ent)
 	if action != nil {
 		fs = append(fs, action)
 	}
@@ -37,7 +40,3 @@ func (t *EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbA
 	_, _ = repo.Clear(ctx, id)
 	return nil
 }
-
-// func Retry() {
-// 	repo.WaitExecWithLock(context.Background(), 1, 1, 1, "test", 10*time.Second)
-// }

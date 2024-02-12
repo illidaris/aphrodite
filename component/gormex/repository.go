@@ -120,14 +120,13 @@ func (r *BaseRepository[T]) BuildConds(ctx context.Context, t *T, opt *dependenc
 	if sharding, ok := any(t).(dependency.IDbSharding); ok {
 		opt.DataBase = sharding.DbSharding(opt.DbShardingKey...)
 	}
-	dataBase := (*t).Database()
-	if opt.DataBase != "" {
-		dataBase = opt.DataBase
+	if opt.DataBase == "" {
+		opt.DataBase = any(t).(dependency.IPo).Database()
 	}
 	if opt != nil && opt.ReadOnly {
-		db = ReadOnly(ctx, dataBase)
+		db = ReadOnly(ctx, opt.DataBase)
 	} else {
-		db = CoreFrmCtx(ctx, dataBase)
+		db = CoreFrmCtx(ctx, opt.DataBase)
 	}
 	db = db.Model(&t)
 	if sharding, ok := any(t).(dependency.ITableSharding); ok {

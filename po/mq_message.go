@@ -1,14 +1,39 @@
 package po
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/illidaris/aphrodite/pkg/dependency"
+	"github.com/illidaris/core"
 )
 
 var _ = dependency.ITask(&MqMessage{})
 var _ = dependency.IEventMessage(&MqMessage{})
+
+func NewMqMessage(
+	ctx context.Context,
+	bizId uint64,
+	category uint32,
+	topic, key string,
+	args any,
+	timeout time.Duration,
+) *MqMessage {
+	bs, _ := json.Marshal(args)
+	p := &MqMessage{}
+	p.Locker = uuid.NewString()
+	p.Expire = time.Now().Add(timeout).Unix()
+	p.Timeout = int64(timeout.Seconds())
+	p.BizId = bizId
+	p.Name = topic
+	p.Key = key
+	p.Category = category
+	p.Args = string(bs)
+	p.TraceId = core.TraceID.GetString(ctx)
+	return p
+}
 
 type MqMessage struct {
 	TaskQueueMessage `gorm:"embedded"`
