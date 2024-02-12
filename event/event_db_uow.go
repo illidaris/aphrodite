@@ -37,7 +37,7 @@ func (t EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAc
 	if err != nil {
 		return err
 	}
-	_, _ = repo.BaseDelete(ctx, ent,
+	go repo.BaseDelete(ctx, ent,
 		dependency.WithDataBase(t.id),
 	)
 	return nil

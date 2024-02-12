@@ -3,6 +3,7 @@ package kafkaex
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/illidaris/aphrodite/pkg/convert"
@@ -134,11 +135,12 @@ func (m *KafkaManager) Publish(ctx context.Context, topic, key string, msg []byt
 	if producer == nil {
 		return ErrProducerNoFound
 	}
+	beg := time.Now()
 	partition, offset, err := producer.SendMessage(mqMsg)
+	logger.Info(ctx, "sendmsg%d-%d: %,%dms,%v", partition, offset, string(msg), time.Since(beg).Milliseconds(), err)
 	if err != nil {
 		return err
 	}
-	logger.Info(ctx, "sendmsg%d-%d: %s", partition, offset, string(msg))
 	return nil
 }
 
