@@ -31,7 +31,7 @@ func (r EventRepository) InsertAction(ctx context.Context, message dependency.IE
 		_, err := r.BaseCreate(
 			ctx,
 			[]*po.MqMessage{p},
-			dependency.WithDbShardingKey(message.GetBizId()),
+			dependency.WithDataBase(message.GetUOWID()),
 			dependency.WithIgnore(true),
 		)
 		return err
