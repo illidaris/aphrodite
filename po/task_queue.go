@@ -15,6 +15,7 @@ type TaskQueueMessage struct {
 	RawBizSection `gorm:"embedded"`
 	Category      uint32 `json:"category" gorm:"column:category;type:int;index:biz;comment:类别"` // 类别 // 1-导出任务
 	Name          string `json:"name" gorm:"column:name;type:varchar(36);index:biz;comment:任务"` // 业务类型
+	Key           string `json:"key" gorm:"column:key;type:varchar(36);comment:分区ID"`           // 分区ID
 	Args          string `json:"args" gorm:"column:args;type:text;comment:参数"`
 	TraceId       string `json:"traceId"  gorm:"column:traceId;type:varchar(36);default:0;comment:追踪链路ID"` // 关联traceId
 	LockSection   `gorm:"embedded"`
@@ -55,8 +56,8 @@ func (p TaskQueueMessage) ToRow() []string {
 	return []string{}
 }
 
-func (p *TaskQueueMessage) ToJson() string {
-	bs, err := json.Marshal(p)
+func (p TaskQueueMessage) ToJson() string {
+	bs, err := json.Marshal(&p)
 	if err != nil {
 		return ""
 	}
