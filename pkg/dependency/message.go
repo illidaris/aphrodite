@@ -1,7 +1,5 @@
 package dependency
 
-import "time"
-
 type IMessage interface {
 	GetTopic() string
 	GetKey() []byte
@@ -9,8 +7,6 @@ type IMessage interface {
 }
 
 type IEventMessage interface {
-	GetBizId() uint64
-	GetTimeout() time.Duration
-	GetUOWID() string
+	ITask
 	IMessage
 }

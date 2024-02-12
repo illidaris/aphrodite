@@ -2,15 +2,14 @@ package dependency
 
 import (
 	"context"
-	"time"
 )
 
 // IMQProducerRepository
-type IMQProducerRepository interface {
-	InsertAction(ctx context.Context, message IEventMessage) (func(context.Context) error, string)
-	WaitExecWithLock(ctx context.Context, bizId, category, batch int, name string, timeout time.Duration) (string, int64, error)
-	FindLockeds(ctx context.Context, locker string) ([]ITask, error)
-	Clear(ctx context.Context, id string) (int64, error)
+type IMQProducerRepository[T IEventMessage] interface {
+	InsertAction(ctx context.Context, t *T) (func(context.Context) error, any)
+	WaitExecWithLock(ctx context.Context, t T, batch int) (string, int64, error)
+	FindLockeds(ctx context.Context, locker string) ([]T, error)
+	Clear(ctx context.Context, id any) (int64, error)
 	ClearByLocker(ctx context.Context, locker string) (int64, error)
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/illidaris/aphrodite/dto"
 	"github.com/illidaris/aphrodite/pkg/dependency"
+	"github.com/illidaris/core"
 	"gorm.io/gorm"
 )
 
@@ -45,6 +46,15 @@ func (r TaskQueueRepository[T]) WaitExecWithLock(ctx context.Context, t T, batch
 // FindLockeds 找到被锁定的记录
 func (r TaskQueueRepository[T]) FindLockeds(ctx context.Context, locker string) ([]T, error) {
 	return r.BaseQuery(ctx, dependency.WithConds("locker = ?", locker))
+}
+
+func (r TaskQueueRepository[T]) Clear(ctx context.Context, id any) (int64, error) {
+	return r.BaseDelete(ctx, new(T), dependency.WithConds("id = ?", id))
+}
+
+func (r TaskQueueRepository[T]) ClearByLocker(ctx context.Context, locker string) (int64, error) {
+	newCtx := core.TraceID.SetString(context.Background(), core.TraceID.GetString(ctx))
+	return r.BaseDelete(newCtx, new(T), dependency.WithConds("locker = ?", locker))
 }
 
 // ReportExecResult 汇报执行结果

@@ -21,8 +21,8 @@ type EventTransactionImpl struct {
 
 func (t *EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAction) (e error) {
 	ent := t.event
-	uow := gormex.NewUnitOfWork(ent.GetUOWID())
-	action, locker := repo.InsertAction(ctx, ent)
+	uow := gormex.NewUnitOfWork(ent.Database())
+	action, id := repo.InsertAction(ctx, &ent)
 	if action != nil {
 		fs = append(fs, action)
 	}
@@ -34,7 +34,7 @@ func (t *EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbA
 	if err != nil {
 		return err
 	}
-	_, _ = repo.ClearByLocker(ctx, locker)
+	_, _ = repo.Clear(ctx, id)
 	return nil
 }
 

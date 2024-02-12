@@ -6,10 +6,14 @@ type IEntity interface {
 	IPo
 }
 
-type ITask interface {
-	IEntity
+type IBaseTask interface {
 	GetTimeout() time.Duration
 	GetBizId() uint64
 	GetCategory() uint32
 	GetName() string
+}
+
+type ITask interface {
+	IEntity
+	IBaseTask
 }

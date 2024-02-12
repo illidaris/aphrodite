@@ -9,17 +9,17 @@ import (
 )
 
 var (
-	repo    dependency.IMQProducerRepository
+	repo    dependency.IMQProducerRepository[dependency.IEventMessage]
 	publish func(ctx context.Context, topic, key string, msg []byte) error
 )
 
-func Init(r dependency.IMQProducerRepository, p func(ctx context.Context, topic, key string, msg []byte) error) {
+func Init(r dependency.IMQProducerRepository[dependency.IEventMessage], p func(ctx context.Context, topic, key string, msg []byte) error) {
 	repo = r
 	publish = p
 }
 
 func InitDefault() {
-	repo = &gormex.EventRepository{}
+	repo = &gormex.EventRepository[dependency.IEventMessage]{}
 	publish = kafkaex.GetKafkaManager().Publish
 	Init(repo, publish)
 }
