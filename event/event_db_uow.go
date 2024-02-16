@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"time"
 
 	"github.com/illidaris/aphrodite/component/gormex"
 	"github.com/illidaris/aphrodite/pkg/dependency"
@@ -35,13 +36,23 @@ func (t EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAc
 		return err
 	}
 	err = publish(ctx, ent.GetTopic(), string(ent.GetKey()), ent.GetValue())
-	if err != nil {
-		return err
-	}
-	go func(e *po.MqMessage) {
+	go func(e *po.MqMessage, publishErr error) {
 		newCtx := core.TraceID.SetString(context.Background(), e.TraceId)
-		_, _ = repo.BaseDelete(newCtx, e,
-			dependency.WithDataBase(e.Db))
-	}(ent)
+		if publishErr != nil {
+			updateE := &po.MqMessage{}
+			updateE.Id = e.Id
+			updateE.BizId = e.BizId
+			updateE.LastError = publishErr.Error()
+			if len(updateE.LastError) > 255 {
+				updateE.LastError = updateE.LastError[:255]
+			}
+			updateE.LastExecAt = time.Now().Unix()
+			_, _ = repo.BaseUpdate(newCtx, updateE,
+				dependency.WithDataBase(e.Db))
+		} else {
+			_, _ = repo.BaseDelete(newCtx, e,
+				dependency.WithDataBase(e.Db))
+		}
+	}(ent, err)
 	return nil
 }
