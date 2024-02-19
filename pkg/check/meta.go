@@ -1,5 +1,7 @@
 package check
 
+import "strings"
+
 // GetFileCategoryByDet returns the FileCategory for a given detection string.
 func GetFileCategoryByDet(det string) FileCategory {
 	return DetCgyMap[det]
@@ -26,7 +28,7 @@ var DetCgyMap = map[string]FileCategory{
 
 // GetFileCategoryByExt returns the FileCategory for a given file extension.
 func GetFileCategoryByExt(ext string) FileCategory {
-	return ExtCgyMap[ext]
+	return ExtCgyMap[strings.ToLower(ext)]
 }
 
 // ExtCgyMap is a map of file extensions to their corresponding FileCategory.
