@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+/*
+  if u want more type check, u can use https://github.com/gabriel-vasile/mimetype
+*/
+
 // FileCategory represents the category of a file.
 type FileCategory int32
 
