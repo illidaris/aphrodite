@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"errors"
 
 	"github.com/illidaris/aphrodite/component/gormex"
 	"github.com/illidaris/aphrodite/component/kafkaex"
@@ -14,13 +15,21 @@ var (
 	publish func(ctx context.Context, topic, key string, msg []byte) error
 )
 
+func defaultPublish(ctx context.Context, topic, key string, msg []byte) error {
+	return errors.New("no impl message queue")
+}
+
 func Init(r dependency.IMQProducerRepository[po.MqMessage], p func(ctx context.Context, topic, key string, msg []byte) error) {
 	repo = r
 	publish = p
+
 }
 
 func InitDefault() {
 	repo = &gormex.EventRepository[po.MqMessage]{}
-	publish = kafkaex.GetKafkaManager().Publish
+	publish = defaultPublish
+	if kafkaex.GetKafkaManager() != nil {
+		publish = kafkaex.GetKafkaManager().Publish
+	}
 	Init(repo, publish)
 }

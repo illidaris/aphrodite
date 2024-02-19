@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/illidaris/aphrodite/component/gormex"
@@ -27,6 +28,9 @@ type EventTransactionImpl struct {
 func (t EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAction) (e error) {
 	ent := t.event
 	uow := gormex.NewUnitOfWork(t.id)
+	if repo == nil {
+		return errors.New("no impl repo")
+	}
 	action := repo.InsertAction(ctx, t.id, ent)
 	if action != nil {
 		fs = append(fs, action)
