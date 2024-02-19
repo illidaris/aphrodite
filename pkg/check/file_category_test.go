@@ -44,3 +44,13 @@ func TestFileCategoryRead(t *testing.T) {
 		}
 	}
 }
+
+func TestFileCategoryOkBs(t *testing.T) {
+	// Test case 1
+	r1 := []byte("image/jpeg")
+	expected1 := true
+	actual1 := FileCategoryImage.OkBs(r1)
+	if actual1 == expected1 {
+		t.Errorf("Test case 1 failed: expected %v, got %v", expected1, actual1)
+	}
+}

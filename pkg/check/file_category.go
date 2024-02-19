@@ -58,3 +58,12 @@ func (t FileCategory) OkRead(r io.Reader) bool {
 	}
 	return GetFileCategoryByDet(det) == t
 }
+
+// OkBs checks if the given byte slice belongs to the specified file category.
+// It first detects the content type of the byte slice using FileTypeByDetectContentType.
+// Then it checks if the detected file category matches the specified file category.
+// Returns true if the byte slice belongs to the specified file category, otherwise false.
+func (t FileCategory) OkBs(r []byte) bool {
+	det := FileTypeByDetectContentType(r)
+	return GetFileCategoryByDet(det) == t
+}
