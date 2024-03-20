@@ -80,9 +80,15 @@ func WithSkip(skip bool) ShellOptionFunc {
 // ShellClear clears the specified cache key and its lock identifier.
 // @param cache The cache instance to perform cache operations.
 // @param request The cache key request interface to get the cache key.
+// @param opts One or more ShellOptionFuncs to further configure the Shell options.
 // @return An exception instance if there's an error clearing the cache.
-func ShellClear(cache dependency.ICache, request dependency.ICacheShellKey) exception.Exception {
-	err := cache.Delete(request.GetCacheKey() + KEY_LOCK_SUFFIX)
+func ShellClear(cache dependency.ICache, request dependency.ICacheShellKey, opts ...ShellOptionFunc) exception.Exception {
+	option := NewShellOptions(nil, request, opts...)
+	if option.cache == nil {
+		return nil
+	}
+	keyLocked := option.key + KEY_LOCK_SUFFIX
+	err := cache.Delete(keyLocked)
 	if err != nil {
 		return exception.ERR_BUSI.Wrap(err)
 	}
