@@ -7,6 +7,7 @@ const (
 	ERR_COMMON     ExceptionType = (iota + 1) * 10000 // 通用错误码
 	ERR_VERIFYCODE                                    // 验证码错误
 	ERR_BUSI                                          // 通用业务操作错误
+	ERR_UNRESPONSE                                    // 没有响应
 )
 
 // 通用错误码

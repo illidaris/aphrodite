@@ -21,5 +21,20 @@ func TestResponse(t *testing.T) {
 			convey.So(resp.Code, convey.ShouldEqual, 30000)
 			convey.So(resp.Message, convey.ShouldEqual, "fail")
 		})
+		convey.Convey("ToException", func() {
+			resp := NewResponse(nil, exception.ERR_BUSI_NOFOUND.New("fail"))
+			convey.So(resp.Code, convey.ShouldEqual, 30001)
+			convey.So(resp.Message, convey.ShouldEqual, "fail")
+			ex := resp.ToException()
+			convey.So(ex.Code(), convey.ShouldEqual, exception.ERR_BUSI_NOFOUND)
+		})
+		convey.Convey("ToExceptionFaild", func() {
+			resp := NewResponse(nil, exception.ERR_BUSI_NOFOUND.New("fail"))
+			resp.Code = 123456
+			convey.So(resp.Code, convey.ShouldEqual, 123456)
+			convey.So(resp.Message, convey.ShouldEqual, "fail")
+			ex := resp.ToException()
+			convey.So(ex.Code(), convey.ShouldEqual, 123456)
+		})
 	})
 }

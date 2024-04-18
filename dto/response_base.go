@@ -2,9 +2,35 @@ package dto
 
 import "github.com/illidaris/aphrodite/pkg/exception"
 
+// CheckResponseException 检查响应对象是否异常
+// 参数：
+// resp - 实现了IResponse接口的对象，表示一个响应实例
+// 返回值：
+// 返回一个exception.Exception类型的对象，表示检测到的异常或无异常（如果响应正常）
+func CheckResponseException(resp IResponse) exception.Exception {
+	// 检查resp是否为nil，如果是，则返回一个未响应的异常
+	if resp == nil {
+		return exception.ERR_UNRESPONSE.New("resp is nil")
+	}
+	// 如果resp不为nil，将其转换为异常对象并返回
+	return resp.ToException()
+}
+
+type IResponse interface {
+	ToException() exception.Exception
+}
+
 type BaseResponse struct {
 	Code    int32  `json:"code"`
 	Message string `json:"message"`
+}
+
+func (r BaseResponse) ToException() exception.Exception {
+	if r.Code == 0 {
+		return nil
+	}
+	ex := exception.ExceptionType(r.Code)
+	return ex.New(r.Message)
 }
 
 type Response struct {
