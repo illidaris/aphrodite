@@ -32,8 +32,10 @@ func InitDefaultManager(user, password string, brokers ...string) (*KafkaManager
 		// 创建一个新的 KafkaManager 实例，并传入 SASL 配置和 broker 地址列表
 		m, err := NewKafkaManager(NewSASLConfig(user, password), brokers...)
 		if err != nil {
+			if logger != nil {
+				logger.Error(context.Background(), err.Error())
+			}
 			println("InitDefaultManager_NewKafkaManager", err.Error())
-			return
 		}
 		// 将 KafkaManager 实例赋值给默认的实例变量
 		defaultManager = m
