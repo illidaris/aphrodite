@@ -26,8 +26,9 @@ type IConsumerGroup interface {
 //   - error：如果创建失败，返回错误信息
 func NewConsumerGroup(groupid string, client sarama.Client) (*ConsumerGroup, error) {
 	g := &ConsumerGroup{
-		id: groupid,
-		rw: sync.RWMutex{},
+		id:     groupid,
+		rw:     sync.RWMutex{},
+		client: client,
 	}
 	group, err := sarama.NewConsumerGroupFromClient(g.id, client)
 	if err != nil {
@@ -39,6 +40,7 @@ func NewConsumerGroup(groupid string, client sarama.Client) (*ConsumerGroup, err
 
 type ConsumerGroup struct {
 	rw          sync.RWMutex         // lock
+	client      sarama.Client        // client
 	id          string               // consume group id
 	core        sarama.ConsumerGroup // consume group core
 	consumerMap map[string]IConsumer // consumer map

@@ -26,11 +26,11 @@ var (
 // 返回值：
 //   - *KafkaManager: KafkaManager 实例的指针
 //   - error: 错误信息，如果没有错误发生则为 nil
-func InitDefaultManager(user, password string, brokers ...string) (*KafkaManager, error) {
+func InitDefaultManager(opts ...OptionsFunc) (*KafkaManager, error) {
 	// 使用 sync.Once 来保证函数只会执行一次
 	onceInitManager.Do(func() {
 		// 创建一个新的 KafkaManager 实例，并传入 SASL 配置和 broker 地址列表
-		m, err := NewKafkaManager(NewSASLConfig(user, password), brokers...)
+		m, err := NewKafkaManager(opts...)
 		if err != nil {
 			if logger != nil {
 				logger.Error(context.Background(), err.Error())
@@ -53,32 +53,23 @@ func GetKafkaManager() *KafkaManager {
 // 参数 config 是 Kafka 客户端配置。
 // 参数 brokers 是 Kafka broker 的地址列表。
 // 返回 KafkaManager 实例和可能的错误。
-func NewKafkaManager(config *sarama.Config, brokers ...string) (*KafkaManager, error) {
-	// 创建 Kafka 客户端
-	client, err := sarama.NewClient(brokers, config)
-	if err != nil {
-		return nil, err
-	}
-
+func NewKafkaManager(opts ...OptionsFunc) (*KafkaManager, error) {
 	// 创建 KafkaManager 实例
 	manager := &KafkaManager{
-		brokers:       brokers,
 		groups:        map[string]IConsumerGroup{},
 		consumerClose: []func(){},
 	}
 
+	for _, o := range opts {
+		o(&manager.Options)
+	}
 	// 设置 Kafka 客户端和配置到 KafkaManager 实例
-	manager.client = client
-	manager.config = config
-
 	return manager, nil
 }
 
 // KafkaManager kafka mq manager
 type KafkaManager struct {
-	brokers       []string
-	config        *sarama.Config
-	client        sarama.Client             // sarama kafka sdk client
+	Options
 	groups        map[string]IConsumerGroup // consumer group map
 	consumerClose []func()                  // consumer close func
 	producerSync  sarama.SyncProducer
@@ -90,7 +81,13 @@ func (m *KafkaManager) GetSyncProducer() sarama.SyncProducer {
 	// Use a sync.Once to ensure that the producer is initialized only once.
 	onceInitSyncProducer.Do(func() {
 		// Create a new synchronized Kafka producer from the existing client.
-		producer, err := sarama.NewSyncProducerFromClient(m.client)
+		config := NewSASLConfig(m.App, m.User, m.Pwd)
+		client, err := sarama.NewClient(m.Addrs, config)
+		if err != nil {
+			logger.Error(context.TODO(), "GetSyncProducer_NewClient err %v", err)
+			return
+		}
+		producer, err := sarama.NewSyncProducerFromClient(client)
 		if err != nil {
 			// Print an error message if the producer creation fails.
 			println("InitDefaultManager_NewProducer", err.Error())
@@ -108,7 +105,13 @@ func (m *KafkaManager) GetASyncProducer() sarama.AsyncProducer {
 	// Ensure that the async producer is initialized only once.
 	onceInitAsyncProducer.Do(func() {
 		// Create a new async producer from the Kafka client.
-		producer, err := sarama.NewAsyncProducerFromClient(m.client)
+		config := NewSASLConfig(m.App, m.User, m.Pwd)
+		client, err := sarama.NewClient(m.Addrs, config)
+		if err != nil {
+			logger.Error(context.TODO(), "GetASyncProducer_NewClient err %v", err)
+			return
+		}
+		producer, err := sarama.NewAsyncProducerFromClient(client)
 		if err != nil {
 			// Print an error message if the producer creation fails.
 			println("InitDefaultManager_NewProducer_Async", err.Error())
@@ -150,8 +153,16 @@ func (m *KafkaManager) Publish(ctx context.Context, topic, key string, msg []byt
 // It returns an error if the group ID is not found or if there is an error creating the consumer group.
 func (m *KafkaManager) NewConsumer(id, groupid string, handler ConsumeHandler, topics ...string) error {
 	if _, ok := m.groups[groupid]; !ok {
-		group, err := NewConsumerGroup(groupid, m.client)
+		config := NewSASLConfig(m.App, m.User, m.Pwd)
+		config.Consumer.Group.InstanceId = id
+		client, err := sarama.NewClient(m.Addrs, config)
 		if err != nil {
+			logger.Error(context.TODO(), "NewConsumer_NewClient%s_%s err %v", groupid, id, err)
+			return err
+		}
+		group, err := NewConsumerGroup(groupid, client)
+		if err != nil {
+			logger.Error(context.TODO(), "NewConsumer_NewConsumerGroup%s_%s err %v", groupid, id, err)
 			return err
 		}
 		m.groups[groupid] = group
