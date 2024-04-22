@@ -154,7 +154,6 @@ func (m *KafkaManager) Publish(ctx context.Context, topic, key string, msg []byt
 func (m *KafkaManager) NewConsumer(id, groupid string, handler ConsumeHandler, topics ...string) error {
 	if _, ok := m.groups[groupid]; !ok {
 		config := NewSASLConfig(m.App, m.User, m.Pwd)
-		config.Consumer.Group.InstanceId = id
 		client, err := sarama.NewClient(m.Addrs, config)
 		if err != nil {
 			logger.Error(context.TODO(), "NewConsumer_NewClient%s_%s err %v", groupid, id, err)
