@@ -25,3 +25,25 @@ func TestPage(t *testing.T) {
 		})
 	})
 }
+
+func TestIsField(t *testing.T) {
+	convey.Convey("TestIsField", t, func() {
+		convey.Convey("success", func() {
+			raw := "aB01111111111111111111"
+			convey.So(IsField(raw), convey.ShouldBeTrue)
+		})
+		convey.Convey("fail", func() {
+			raw := "aB011111%11111111111111"
+			convey.So(IsField(raw), convey.ShouldBeFalse)
+		})
+
+	})
+}
+
+func BenchmarkIsField(b *testing.B) {
+	raw := "aB01111111111111111111"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = IsField(raw)
+	}
+}

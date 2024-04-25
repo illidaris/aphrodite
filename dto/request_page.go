@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/illidaris/aphrodite/pkg/dependency"
@@ -57,10 +58,26 @@ func (dto *Page) GetSorts() []dependency.ISortField {
 	for _, v := range dto.Sorts {
 		words := strings.Split(v, "|")
 		if len(words) == 1 {
-			s = append(s, &SortField{Field: words[0]})
+			w := words[0]
+			if !IsField(w) {
+				continue
+			}
+			s = append(s, &SortField{Field: w})
 		} else if len(words) > 1 {
-			s = append(s, &SortField{Field: words[0], IsDesc: words[1] == "desc"})
+			w := words[0]
+			if !IsField(w) {
+				continue
+			}
+			s = append(s, &SortField{Field: w, IsDesc: words[1] == "desc"})
 		}
 	}
 	return s
+}
+
+const FMT_AZNUM = `^[a-zA-Z0-9_]*$`
+
+// IsField 防止sql注入
+func IsField(s string) bool {
+	match, _ := regexp.MatchString(FMT_AZNUM, s)
+	return match
 }
