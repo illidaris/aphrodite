@@ -59,13 +59,13 @@ func (dto *Page) GetSorts() []dependency.ISortField {
 		words := strings.Split(v, "|")
 		if len(words) == 1 {
 			w := words[0]
-			if !IsField(w) {
+			if !IsField(w) || !IsAllowFields(w) {
 				continue
 			}
 			s = append(s, &SortField{Field: w})
 		} else if len(words) > 1 {
 			w := words[0]
-			if !IsField(w) {
+			if !IsField(w) || !IsAllowFields(w) {
 				continue
 			}
 			s = append(s, &SortField{Field: w, IsDesc: words[1] == "desc"})
@@ -80,4 +80,26 @@ const FMT_AZNUM = `^[a-zA-Z0-9_]*$`
 func IsField(s string) bool {
 	match, _ := regexp.MatchString(FMT_AZNUM, s)
 	return match
+}
+
+var allowedFields = map[string]struct{}{
+	"id":        {},
+	"createAt":  {},
+	"create_at": {},
+	"modifyAt":  {},
+	"modify_at": {},
+	"updateAt":  {},
+	"update_at": {},
+	"sort":      {},
+}
+
+func AddAllowFields(fields ...string) {
+	for _, v := range fields {
+		allowedFields[v] = struct{}{}
+	}
+}
+
+func IsAllowFields(field string) bool {
+	_, ok := allowedFields[field]
+	return ok
 }
