@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"html/template"
 	"regexp"
 	"strings"
 
@@ -102,4 +103,14 @@ func AddAllowFields(fields ...string) {
 func IsAllowFields(field string) bool {
 	_, ok := allowedFields[field]
 	return ok
+}
+
+func AddAllowSortField(fields ...string) {
+	for _, v := range fields {
+		allowedFields[v] = struct{}{}
+	}
+}
+
+func StringFilter(s string) string {
+	return template.HTMLEscapeString(s)
 }
