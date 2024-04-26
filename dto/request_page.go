@@ -1,10 +1,9 @@
 package dto
 
 import (
-	"html/template"
-	"regexp"
 	"strings"
 
+	"github.com/illidaris/aphrodite/pkg/convert"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 )
 
@@ -59,58 +58,18 @@ func (dto *Page) GetSorts() []dependency.ISortField {
 	for _, v := range dto.Sorts {
 		words := strings.Split(v, "|")
 		if len(words) == 1 {
-			w := words[0]
-			if !IsField(w) || !IsAllowFields(w) {
+			w, ok := convert.DefFieldFilter(words[0])
+			if !ok {
 				continue
 			}
 			s = append(s, &SortField{Field: w})
 		} else if len(words) > 1 {
-			w := words[0]
-			if !IsField(w) || !IsAllowFields(w) {
+			w, ok := convert.DefFieldFilter(words[0])
+			if !ok {
 				continue
 			}
 			s = append(s, &SortField{Field: w, IsDesc: words[1] == "desc"})
 		}
 	}
 	return s
-}
-
-const FMT_AZNUM = `^[a-zA-Z0-9_]*$`
-
-// IsField 防止sql注入
-func IsField(s string) bool {
-	match, _ := regexp.MatchString(FMT_AZNUM, s)
-	return match
-}
-
-var allowedFields = map[string]struct{}{
-	"id":        {},
-	"createAt":  {},
-	"create_at": {},
-	"modifyAt":  {},
-	"modify_at": {},
-	"updateAt":  {},
-	"update_at": {},
-	"sort":      {},
-}
-
-func AddAllowFields(fields ...string) {
-	for _, v := range fields {
-		allowedFields[v] = struct{}{}
-	}
-}
-
-func IsAllowFields(field string) bool {
-	_, ok := allowedFields[field]
-	return ok
-}
-
-func AddAllowSortField(fields ...string) {
-	for _, v := range fields {
-		allowedFields[v] = struct{}{}
-	}
-}
-
-func StringFilter(s string) string {
-	return template.HTMLEscapeString(s)
 }

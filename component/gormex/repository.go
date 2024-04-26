@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/illidaris/aphrodite/pkg/convert"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/group"
 
@@ -171,7 +172,10 @@ func (r *BaseRepository[T]) BuildFrmOptions(ctx context.Context, t *T, opts ...d
 func Option2Page(db *gorm.DB, opt *dependency.BaseOption) *gorm.DB {
 	if opt.Page != nil {
 		for _, f := range opt.Page.GetSorts() {
-			key := f.GetField()
+			key, _ := convert.FieldFilter(f.GetField(), convert.FieldFilterLevelDefault)
+			if key == "" {
+				continue
+			}
 			if f.GetIsDesc() {
 				key = fmt.Sprintf("%s %s", key, "desc")
 			}
