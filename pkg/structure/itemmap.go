@@ -2,8 +2,8 @@ package structure
 
 import "sync"
 
-func NewItemMap[T any]() *ItemMap[T] {
-	return &ItemMap[T]{
+func NewItemMap[T any]() ItemMap[T] {
+	return ItemMap[T]{
 		mut: sync.RWMutex{},
 		kv:  map[string]*T{},
 	}
