@@ -4,14 +4,14 @@ import "sync"
 
 func NewItemMap[T any]() ItemMap[T] {
 	return ItemMap[T]{
-		mut: sync.RWMutex{},
+		mut: &sync.RWMutex{},
 		kv:  map[string]*T{},
 	}
 }
 
 // ItemMap is a thread-safe key-value map for storing and retrieving items of any type T.
 type ItemMap[T any] struct {
-	mut sync.RWMutex  // Read-write mutex for concurrent access synchronization.
+	mut *sync.RWMutex // Read-write mutex for concurrent access synchronization.
 	kv  map[string]*T // The underlying map storing key-value pairs.
 }
 

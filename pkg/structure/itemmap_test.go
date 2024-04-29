@@ -2,16 +2,11 @@ package structure
 
 import (
 	"fmt"
-	"sync"
 	"testing"
 )
 
-func TestItemMap_GetOrSet(t *testing.T) {
-	im := ItemMap[string]{
-		mut: sync.RWMutex{},
-		kv:  map[string]*string{},
-	}
-
+func TestItemMapGetOrSet(t *testing.T) {
+	im := NewItemMap[string]()
 	// Test case 1: Item exists
 	key1 := "key1"
 	value1 := "value1"
@@ -46,11 +41,8 @@ func TestItemMap_GetOrSet(t *testing.T) {
 	}
 }
 
-func TestItemMap_GetItem(t *testing.T) {
-	im := ItemMap[string]{
-		mut: sync.RWMutex{},
-		kv:  map[string]*string{},
-	}
+func TestItemMapGetItem(t *testing.T) {
+	im := NewItemMap[string]()
 
 	// Test case 1: Item exists
 	key1 := "key1"
@@ -73,11 +65,8 @@ func TestItemMap_GetItem(t *testing.T) {
 	}
 }
 
-func TestItemMap_SetItem(t *testing.T) {
-	im := ItemMap[string]{
-		mut: sync.RWMutex{},
-		kv:  map[string]*string{},
-	}
+func TestItemMapSetItem(t *testing.T) {
+	im := NewItemMap[string]()
 
 	// Test case: Set item
 	key := "key"
