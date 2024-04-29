@@ -45,7 +45,10 @@ func QueryScan2Map(ctx context.Context, db *sql.DB, sqlstr string, args ...inter
 		for i := 0; i < colCount; i++ {
 			valPtrs[i] = &values[i]
 		}
-		rows.Scan(valPtrs...)
+
+		if subErr := rows.Scan(valPtrs...); subErr != nil {
+			return nil, subErr
+		}
 
 		entry := map[string]interface{}{}
 		for i, col := range cols {
