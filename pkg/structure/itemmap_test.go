@@ -8,7 +8,7 @@ import (
 
 func TestItemMap_GetOrSet(t *testing.T) {
 	im := ItemMap[string]{
-		mut: &sync.RWMutex{},
+		mut: sync.RWMutex{},
 		kv:  map[string]*string{},
 	}
 
@@ -48,7 +48,7 @@ func TestItemMap_GetOrSet(t *testing.T) {
 
 func TestItemMap_GetItem(t *testing.T) {
 	im := ItemMap[string]{
-		mut: &sync.RWMutex{},
+		mut: sync.RWMutex{},
 		kv:  map[string]*string{},
 	}
 
@@ -75,7 +75,7 @@ func TestItemMap_GetItem(t *testing.T) {
 
 func TestItemMap_SetItem(t *testing.T) {
 	im := ItemMap[string]{
-		mut: &sync.RWMutex{},
+		mut: sync.RWMutex{},
 		kv:  map[string]*string{},
 	}
 
