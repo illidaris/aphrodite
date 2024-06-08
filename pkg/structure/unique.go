@@ -45,7 +45,7 @@ func (n *UniqueArray[T]) Len() int {
 }
 
 type IItemSection[T comparable] interface {
-	ID() T
+	IIDSection[T]
 	Sort() int
 }
 

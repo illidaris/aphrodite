@@ -15,7 +15,7 @@ func (d *demo) ID() string {
 	return d.id
 }
 func (d *demo) Sort() int {
-	return d.Sort()
+	return d.sort
 }
 func TestUniqueArray(t *testing.T) {
 	convey.Convey("TestUniqueArray", t, func() {
