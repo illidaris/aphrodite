@@ -7,6 +7,7 @@ require (
 	github.com/IBM/sarama v1.43.1
 	github.com/agiledragon/gomonkey/v2 v2.10.1
 	github.com/gin-gonic/gin v1.9.1
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/uuid v1.3.1
 	github.com/illidaris/core v1.0.0
 	github.com/illidaris/logger v1.2.2
@@ -22,8 +23,10 @@ require (
 
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/eapache/go-resiliency v1.6.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
