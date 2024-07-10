@@ -31,6 +31,9 @@ func TestTable2Struct(t *testing.T) {
 				{"name", "age", "is_student", "create_at", "", "", ""},
 				{"Alice", "25", "true", "2023-05-07 22:23:24", "", "", ""},
 				{"Bob", "30", "false", "2023-05-08 22:24:24", "", "", ""},
+				{"", "", "", "", "", "x", ""},
+				{"", "", "", "", "Y", "x", ""},
+				{"", "", "", "", "", "", "", "xx"},
 			},
 			opts: []Table2StructOptionFunc{
 				WithStructTag("json"),

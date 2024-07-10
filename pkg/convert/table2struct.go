@@ -5,6 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cast"
 )
@@ -93,6 +94,10 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 		}
 		// 跳过起始行之前的数据
 		if rowIndex < option.StartRowIndex {
+			continue
+		}
+		// 跳过无效行
+		if len(row) >= len(headMap) && strings.Join(row[:len(headMap)], "") == "" {
 			continue
 		}
 		// 达到行数限制时停止转换
