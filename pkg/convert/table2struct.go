@@ -86,7 +86,9 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 		// 处理表头
 		if rowIndex == option.HeadIndex {
 			for index, h := range row {
-				headMap[h] = index
+				if h != "" {
+					headMap[h] = index
+				}
 			}
 		}
 		// 跳过起始行之前的数据
@@ -94,7 +96,7 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 			continue
 		}
 		// 达到行数限制时停止转换
-		if rowIndex > option.Limit+option.StartRowIndex-1 {
+		if option.Limit > 0 && rowIndex > option.Limit+option.StartRowIndex-1 {
 			break
 		}
 		// 创建新的结构体实例
@@ -107,7 +109,10 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 			if tag == "" {
 				continue
 			}
-			colIndex := headMap[tag]
+			colIndex, ok := headMap[tag]
+			if !ok {
+				continue
+			}
 			cellValue := row[colIndex]
 			// 根据字段类型转换并赋值
 			switch field.Type.Kind() {
@@ -124,7 +129,8 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 				v, _ := strconv.ParseFloat(cellValue, 64)
 				newData.Field(i).SetFloat(v)
 			case reflect.String:
-				newData.Field(i).SetString(cellValue)
+				v := cellValue
+				newData.Field(i).SetString(v)
 			default:
 				// 处理特殊类型，如time.Time和time.Duration
 				switch field.Type.String() {

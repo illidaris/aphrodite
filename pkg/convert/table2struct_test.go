@@ -10,10 +10,12 @@ import (
 
 func TestTable2Struct(t *testing.T) {
 	type StudentInfo struct {
+		Id        int       `json:"id"`
 		Name      string    `json:"name"`
 		Age       uint16    `json:"age"`
 		IsStudent bool      `json:"is_student"`
 		CreateAt  time.Time `json:"create_at"`
+		Desc      string    `json:"desc"`
 	}
 	// 定义测试用例
 	tests := []struct {
@@ -26,9 +28,9 @@ func TestTable2Struct(t *testing.T) {
 		{
 			name: "Valid conversion",
 			rows: [][]string{
-				{"name", "age", "is_student", "create_at"},
-				{"Alice", "25", "true", "2023-05-07 22:23:24"},
-				{"Bob", "30", "false", "2023-05-08 22:24:24"},
+				{"name", "age", "is_student", "create_at", "", "", ""},
+				{"Alice", "25", "true", "2023-05-07 22:23:24", "", "", ""},
+				{"Bob", "30", "false", "2023-05-08 22:24:24", "", "", ""},
 			},
 			opts: []Table2StructOptionFunc{
 				WithStructTag("json"),
@@ -46,7 +48,6 @@ func TestTable2Struct(t *testing.T) {
 			name: "Invalid dst type",
 			rows: [][]string{
 				{"Name", "Age"},
-				{"Alice", "25"},
 			},
 			opts: []Table2StructOptionFunc{
 				WithStructTag("json"),
