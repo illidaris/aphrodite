@@ -76,3 +76,42 @@ func TestTable2Struct(t *testing.T) {
 		})
 	}
 }
+
+// TestStruct2Table tests the Struct2Table function.
+func TestStruct2Table(t *testing.T) {
+	// Define a test struct type
+	type MyStruct struct {
+		Name  string `table2struct:"name"`
+		Age   int    `table2struct:"age"`
+		Email string `table2struct:"email"`
+	}
+
+	// Create a slice of MyStruct instances
+	dst := []interface{}{
+		MyStruct{Name: "Alice", Email: "alice@example.com", Age: 25},
+		MyStruct{Age: 30, Email: "bob@example.com", Name: "Bob"},
+	}
+
+	// Call Struct2Table function
+	heads, rows, err := Struct2Table(dst, WithStructTag("table2struct"))
+	if err != nil {
+		t.Errorf("Struct2Table returned an error: %v", err)
+	}
+
+	// Define expected results
+	expectedHeads := []string{"name", "age", "email"}
+	expectedRows := [][]string{
+		{"Alice", "25", "alice@example.com"},
+		{"Bob", "30", "bob@example.com"},
+	}
+
+	// Check if the heads match the expected heads
+	if !reflect.DeepEqual(heads, expectedHeads) {
+		t.Errorf("Expected heads: %v, but got: %v", expectedHeads, heads)
+	}
+
+	// Check if the rows match the expected rows
+	if !reflect.DeepEqual(rows, expectedRows) {
+		t.Errorf("Expected rows: %v, but got: %v", expectedRows, rows)
+	}
+}

@@ -72,7 +72,6 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 	// 初始化转换选项
 	var (
 		option  = newTable2StructOption(opts...)
-		heads   = []string{}
 		headMap = map[string]int{}
 	)
 	dataValue := reflect.ValueOf(dst)
@@ -86,8 +85,7 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 	for rowIndex, row := range rows {
 		// 处理表头
 		if rowIndex == option.HeadIndex {
-			heads = row
-			for index, h := range heads {
+			for index, h := range row {
 				headMap[h] = index
 			}
 		}
@@ -143,4 +141,28 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 		dataValue.Elem().Set(reflect.Append(dataValue.Elem(), newData))
 	}
 	return
+}
+
+func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([]string, [][]string, error) {
+	var (
+		option = newTable2StructOption(opts...)
+		heads  = []string{}
+		rows   = [][]string{}
+	)
+	for rowIndex, dst := range dsts {
+		row := []string{}
+		dataType := reflect.TypeOf(dst)
+		dataValue := reflect.ValueOf(dst)
+		for i := 0; i < dataType.NumField(); i++ {
+			field := dataType.Field(i)
+			tag := field.Tag.Get(option.StructTag)
+			if rowIndex == 0 {
+				heads = append(heads, tag)
+			}
+			val := dataValue.Field(i).Interface()
+			row = append(row, cast.ToString(val))
+		}
+		rows = append(rows, row)
+	}
+	return heads, rows, nil
 }
