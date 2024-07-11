@@ -1,4 +1,4 @@
-package convert
+package table2struct
 
 import (
 	"reflect"
@@ -85,9 +85,13 @@ func TestTable2Struct(t *testing.T) {
 func TestStruct2Table(t *testing.T) {
 	// Define a test struct type
 	type MyStruct struct {
-		Name  string `table2struct:"name"`
-		Age   int    `table2struct:"age"`
-		Email string `table2struct:"email"`
+		Id            int64  `table2struct:"id" gorm:"column:name;type:int"`
+		Name          string `table2struct:"name" gorm:"column:name;comment:姓名;varchar(24)"`
+		Age           int    `table2struct:"age" gorm:"column:age;type:int;comment:年龄，最大为100"`
+		Email         string `table2struct:"email" gorm:"column:email;comment:邮箱;varchar(255)"`
+		CreateByName  string
+		CreateByName2 string `gorm:"column:createByName2;comment:创建人2;varchar(255)"`
+		CreateByName3 string `table2struct:"createByName3"`
 	}
 
 	// Create a slice of MyStruct instances
@@ -97,16 +101,18 @@ func TestStruct2Table(t *testing.T) {
 	}
 
 	// Call Struct2Table function
-	heads, rows, err := Struct2Table(dst, WithStructTag("table2struct"))
+	heads, rows, err := Struct2Table(dst, WithStructTag("table2struct"), WithAnnoMap(map[string]string{
+		"createByName3": "创建人",
+	}))
 	if err != nil {
 		t.Errorf("Struct2Table returned an error: %v", err)
 	}
 
 	// Define expected results
-	expectedHeads := []string{"name", "age", "email"}
+	expectedHeads := [][]string{{"", "姓名", "年龄，最大为100", "邮箱", "创建人"}, {"id", "name", "age", "email", "createByName3"}}
 	expectedRows := [][]string{
-		{"Alice", "25", "alice@example.com"},
-		{"Bob", "30", "bob@example.com"},
+		{"0", "Alice", "25", "alice@example.com", ""},
+		{"0", "Bob", "30", "bob@example.com", ""},
 	}
 
 	// Check if the heads match the expected heads

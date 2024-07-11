@@ -1,4 +1,4 @@
-package convert
+package table2struct
 
 // 包导入
 import (
@@ -17,19 +17,47 @@ var (
 
 // table2StructOption定义了Table2Struct转换的配置选项
 type table2StructOption struct {
-	StructTag     string // 结构体标签，默认为"json"
-	HeadIndex     int    // 表头索引，默认为0
-	StartRowIndex int    // 起始行索引，默认为1，即第一行数据开始
-	Limit         int    // 转换行数限制，默认为0，表示无限制
+	StructTag       string            // 结构体标签，默认为"json"
+	AnnoTag         string            // 注释标签，默认为"gorm"
+	AnnoTagSplit    string            // 注释标签分隔符，默认为";"
+	AnnoTagKey      string            // 注释标签键，默认为"comment"
+	AnnoTagKeySplit string            // 注释标签键分隔符，默认为":"
+	AnnoMap         map[string]string // 注释标签键值对，默认为空
+	HeadIndex       int               // 表头索引，默认为0
+	StartRowIndex   int               // 起始行索引，默认为1，即第一行数据开始
+	Limit           int               // 转换行数限制，默认为0，表示无限制
+}
+
+// ParseAnno 解析注释
+func (o table2StructOption) ParseAnno(tag, anno string) string {
+	comment := ""
+	if len(o.AnnoMap) > 0 {
+		comment = o.AnnoMap[tag]
+	}
+	if comment == "" {
+		kvs := strings.Split(anno, o.AnnoTagSplit)
+		for _, v := range kvs {
+			ks := strings.Split(v, o.AnnoTagKeySplit)
+			if len(ks) > 1 && ks[0] == o.AnnoTagKey {
+				comment = ks[1]
+			}
+		}
+	}
+	return comment
 }
 
 // newTable2StructOption根据提供的Table2StructOptionFuncs生成并返回table2StructOption实例
 func newTable2StructOption(opts ...Table2StructOptionFunc) table2StructOption {
 	opt := table2StructOption{
-		StructTag:     "json",
-		HeadIndex:     0,
-		StartRowIndex: 1,
-		Limit:         0,
+		StructTag:       "json",
+		AnnoTag:         "gorm",
+		AnnoTagSplit:    ";",
+		AnnoTagKey:      "comment",
+		AnnoTagKeySplit: ":",
+		AnnoMap:         map[string]string{},
+		HeadIndex:       0,
+		StartRowIndex:   1,
+		Limit:           0,
 	}
 	for _, f := range opts {
 		f(&opt)
@@ -65,6 +93,43 @@ func WithStartRowIndex(v int) func(opt *table2StructOption) {
 func WithLimit(v int) func(opt *table2StructOption) {
 	return func(opt *table2StructOption) {
 		opt.Limit = v
+	}
+}
+
+// WithAnnoTag 注释标签，默认为"gorm"
+func WithAnnoTag(v string) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.AnnoTag = v
+	}
+}
+
+// AnnoTagSplit 注释标签分隔符，默认为";"
+func WithAnnoTagSplit(v string) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.AnnoTagSplit = v
+	}
+}
+
+// WithAnnoTagKey 注释标签键，默认为"comment"
+func WithAnnoTagKey(v string) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.AnnoTagKey = v
+	}
+}
+
+// WithAnnoTagKeySplit 注释标签键分隔符，默认为":"
+func WithAnnoTagKeySplit(v string) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.AnnoTagKeySplit = v
+	}
+}
+
+// WithAnnoMap 注释标签键值对，默认为空
+func WithAnnoMap(m map[string]string) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		for k, v := range m {
+			opt.AnnoMap[k] = v
+		}
 	}
 }
 
@@ -154,11 +219,13 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 	return
 }
 
-func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([]string, [][]string, error) {
+func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]string, [][]string, error) {
 	var (
-		option = newTable2StructOption(opts...)
-		heads  = []string{}
-		rows   = [][]string{}
+		option  = newTable2StructOption(opts...)
+		annoes  = []string{}
+		heads   = []string{}
+		headers = [][]string{}
+		rows    = [][]string{}
 	)
 	for rowIndex, dst := range dsts {
 		row := []string{}
@@ -167,13 +234,28 @@ func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([]string,
 		for i := 0; i < dataType.NumField(); i++ {
 			field := dataType.Field(i)
 			tag := field.Tag.Get(option.StructTag)
+			// 没有打标记就跳过
+			if tag == "" {
+				continue
+			}
 			if rowIndex == 0 {
 				heads = append(heads, tag)
+			}
+			anno := field.Tag.Get(option.AnnoTag)
+			if rowIndex == 0 {
+				comment := option.ParseAnno(tag, anno)
+				annoes = append(annoes, comment)
 			}
 			val := dataValue.Field(i).Interface()
 			row = append(row, cast.ToString(val))
 		}
 		rows = append(rows, row)
 	}
-	return heads, rows, nil
+	if len(annoes) > 0 && len(strings.Join(annoes, "")) > 0 {
+		headers = append(headers, annoes)
+	}
+	if len(heads) > 0 {
+		headers = append(headers, heads)
+	}
+	return headers, rows, nil
 }
