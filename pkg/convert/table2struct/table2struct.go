@@ -20,6 +20,7 @@ type table2StructOption struct {
 	StructTag        string                         // 结构体标签，默认为"json"
 	AllowTagFields   []string                       // 允许导入或者导出的标签字段，不设置表示无限制
 	FieldConvertFunc map[string]func(string) string // 字段转换函数，默认为空，不转换
+	IgnoreZero       bool                           // 是否忽略零值，默认为false，不忽略
 	AnnoTag          string                         // 注释标签，默认为"gorm"
 	AnnoTagSplit     string                         // 注释标签分隔符，默认为";"
 	AnnoTagKey       string                         // 注释标签键，默认为"comment"
@@ -106,6 +107,13 @@ func WithStructTag(v string) func(opt *table2StructOption) {
 func WithAllowTagFields(vs ...string) func(opt *table2StructOption) {
 	return func(opt *table2StructOption) {
 		opt.AllowTagFields = append(opt.AllowTagFields, vs...)
+	}
+}
+
+// WithIgnoreZero 忽略0，"0" 转 ""
+func WithIgnoreZero() func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.IgnoreZero = true
 	}
 }
 
@@ -290,6 +298,9 @@ func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]strin
 			}
 			val := dataValue.Field(i).Interface()
 			valStr := option.ValueConvert(tag, cast.ToString(val))
+			if option.IgnoreZero && valStr == "0" {
+				valStr = ""
+			}
 			row = append(row, valStr)
 		}
 		rows = append(rows, row)
