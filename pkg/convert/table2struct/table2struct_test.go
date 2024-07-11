@@ -41,10 +41,16 @@ func TestTable2Struct(t *testing.T) {
 				WithStartRowIndex(1),
 				WithLimit(2),
 				WithAllowTagFields("name", "age", "create_at"),
+				WithFieldConvertFunc("name", func(s string) string {
+					if s == "Bob" {
+						return "Bobby"
+					}
+					return s
+				}),
 			},
 			want: []StudentInfo{
 				{Name: "Alice", Age: 25, IsStudent: false, CreateAt: cast.ToTime("2023-05-07 22:23:24")},
-				{Name: "Bob", Age: 30, IsStudent: false, CreateAt: cast.ToTime("2023-05-08 22:24:24")},
+				{Name: "Bobby", Age: 30, IsStudent: false, CreateAt: cast.ToTime("2023-05-08 22:24:24")},
 			},
 			wantErr: false,
 		},

@@ -17,16 +17,17 @@ var (
 
 // table2StructOption定义了Table2Struct转换的配置选项
 type table2StructOption struct {
-	StructTag       string            // 结构体标签，默认为"json"
-	AllowTagFields  []string          // 允许导入或者导出的标签字段，不设置表示无限制
-	AnnoTag         string            // 注释标签，默认为"gorm"
-	AnnoTagSplit    string            // 注释标签分隔符，默认为";"
-	AnnoTagKey      string            // 注释标签键，默认为"comment"
-	AnnoTagKeySplit string            // 注释标签键分隔符，默认为":"
-	AnnoMap         map[string]string // 注释标签键值对，默认为空
-	HeadIndex       int               // 表头索引，默认为0
-	StartRowIndex   int               // 起始行索引，默认为1，即第一行数据开始
-	Limit           int               // 转换行数限制，默认为0，表示无限制
+	StructTag        string                         // 结构体标签，默认为"json"
+	AllowTagFields   []string                       // 允许导入或者导出的标签字段，不设置表示无限制
+	FieldConvertFunc map[string]func(string) string // 字段转换函数，默认为空，不转换
+	AnnoTag          string                         // 注释标签，默认为"gorm"
+	AnnoTagSplit     string                         // 注释标签分隔符，默认为";"
+	AnnoTagKey       string                         // 注释标签键，默认为"comment"
+	AnnoTagKeySplit  string                         // 注释标签键分隔符，默认为":"
+	AnnoMap          map[string]string              // 注释标签键值对，默认为空
+	HeadIndex        int                            // 表头索引，默认为0
+	StartRowIndex    int                            // 起始行索引，默认为1，即第一行数据开始
+	Limit            int                            // 转换行数限制，默认为0，表示无限制
 
 }
 
@@ -49,7 +50,7 @@ func (o table2StructOption) ParseAnno(tag, anno string) string {
 }
 
 // Allow 过滤字段
-func (o table2StructOption) Allow(field string) bool {
+func (o table2StructOption) FieldAllow(field string) bool {
 	if len(o.AllowTagFields) == 0 {
 		return true
 	}
@@ -61,19 +62,29 @@ func (o table2StructOption) Allow(field string) bool {
 	return false
 }
 
+// ValueConvert 值转化
+func (o table2StructOption) ValueConvert(field, value string) string {
+	f, ok := o.FieldConvertFunc[field]
+	if !ok || f == nil {
+		return value
+	}
+	return f(value)
+}
+
 // newTable2StructOption根据提供的Table2StructOptionFuncs生成并返回table2StructOption实例
 func newTable2StructOption(opts ...Table2StructOptionFunc) table2StructOption {
 	opt := table2StructOption{
-		StructTag:       "json",
-		AllowTagFields:  []string{},
-		AnnoTag:         "gorm",
-		AnnoTagSplit:    ";",
-		AnnoTagKey:      "comment",
-		AnnoTagKeySplit: ":",
-		AnnoMap:         map[string]string{},
-		HeadIndex:       0,
-		StartRowIndex:   1,
-		Limit:           0,
+		StructTag:        "json",
+		AllowTagFields:   []string{},
+		FieldConvertFunc: map[string]func(string) string{},
+		AnnoTag:          "gorm",
+		AnnoTagSplit:     ";",
+		AnnoTagKey:       "comment",
+		AnnoTagKeySplit:  ":",
+		AnnoMap:          map[string]string{},
+		HeadIndex:        0,
+		StartRowIndex:    1,
+		Limit:            0,
 	}
 	for _, f := range opts {
 		f(&opt)
@@ -95,6 +106,13 @@ func WithStructTag(v string) func(opt *table2StructOption) {
 func WithAllowTagFields(vs ...string) func(opt *table2StructOption) {
 	return func(opt *table2StructOption) {
 		opt.AllowTagFields = append(opt.AllowTagFields, vs...)
+	}
+}
+
+// WithFieldConvertFunc 字段值转化函数
+func WithFieldConvertFunc(field string, f func(string) string) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.FieldConvertFunc[field] = f
 	}
 }
 
@@ -199,7 +217,7 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 			field := dataType.Field(i)
 			tag := field.Tag.Get(option.StructTag)
 			// 如果字段没有指定的标签，则跳过
-			if tag == "" || !option.Allow(tag) {
+			if tag == "" || !option.FieldAllow(tag) {
 				continue
 			}
 			colIndex, ok := headMap[tag]
@@ -207,6 +225,7 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 				continue
 			}
 			cellValue := row[colIndex]
+			cellValue = option.ValueConvert(tag, cellValue)
 			// 根据字段类型转换并赋值
 			switch field.Type.Kind() {
 			case reflect.Bool:
@@ -258,7 +277,7 @@ func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]strin
 			field := dataType.Field(i)
 			tag := field.Tag.Get(option.StructTag)
 			// 没有打标记就跳过
-			if tag == "" || !option.Allow(tag) {
+			if tag == "" || !option.FieldAllow(tag) {
 				continue
 			}
 			if rowIndex == 0 {
@@ -270,7 +289,8 @@ func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]strin
 				annoes = append(annoes, comment)
 			}
 			val := dataValue.Field(i).Interface()
-			row = append(row, cast.ToString(val))
+			valStr := option.ValueConvert(tag, cast.ToString(val))
+			row = append(row, valStr)
 		}
 		rows = append(rows, row)
 	}
