@@ -3,7 +3,8 @@ package idsegment
 import (
 	"context"
 	"errors"
-	"hercules/pkg/idgenerate/dep"
+
+	"github.com/illidaris/aphrodite/idgenerate/dep"
 )
 
 var _ = dep.IIDGenerate(&IdSegment{})

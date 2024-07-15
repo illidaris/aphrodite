@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"hercules/pkg/idgenerate/dep"
 	"sync"
 	"testing"
+
+	"github.com/illidaris/aphrodite/idgenerate/dep"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/go-redis/redis/v8"

@@ -6,8 +6,8 @@ var _ = dependency.IRange(&Range{})
 
 // Range range
 type Range struct {
-	Beg int64 `json:"beg" form:"beg"`
-	End int64 `json:"end" form:"end"`
+	Beg int64 `json:"beg" form:"beg" url:"beg"`
+	End int64 `json:"end" form:"end" url:"end"`
 }
 
 func (i *Range) GetBeg() int64 {
