@@ -11,7 +11,7 @@ var _ = dependency.IBizRequest(&BizRequest{}) // check impl
 
 // BizRequest default business tag reqquest
 type BizRequest struct {
-	BizId int64 `json:"bizId" form:"bizId" uri:"bizId" url:"bizId"`
+	BizId int64 `json:"bizId" form:"bizId" uri:"bizId" url:"bizId,omitempty"`
 }
 
 func (r *BizRequest) GetBizId() int64 {

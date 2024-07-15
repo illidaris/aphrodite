@@ -27,10 +27,10 @@ var _ = dependency.IPage(&Page{})
 
 // Page default page request
 type Page struct {
-	PageIndex int64       `json:"page" form:"page" uri:"page" url:"page" binding:"required,gte=1"`                 // currect page no
-	AfterId   interface{} `json:"afterId" form:"afterId" url:"afterId"`                                            // previous page last id, when sort by pk
-	PageSize  int64       `json:"pageSize" form:"pageSize" uri:"pageSize" url:"pageSize" binding:"required,gte=1"` // page size
-	Sorts     []string    `json:"sorts" form:"sorts" uri:"sorts" url:"sorts"`                                      // eg; field|desc
+	PageIndex int64       `json:"page" form:"page" uri:"page" url:"page,omitempty" binding:"required,gte=1"`                 // currect page no
+	AfterId   interface{} `json:"afterId" form:"afterId" url:"afterId,omitempty"`                                            // previous page last id, when sort by pk
+	PageSize  int64       `json:"pageSize" form:"pageSize" uri:"pageSize,omitempty" url:"pageSize" binding:"required,gte=1"` // page size
+	Sorts     []string    `json:"sorts" form:"sorts" uri:"sorts" url:"sorts,omitempty"`                                      // eg; field|desc
 }
 
 func (dto *Page) GetPageIndex() int64 {
