@@ -29,7 +29,6 @@ type table2StructOption struct {
 	HeadIndex        int                            // 表头索引，默认为0
 	StartRowIndex    int                            // 起始行索引，默认为1，即第一行数据开始
 	Limit            int                            // 转换行数限制，默认为0，表示无限制
-
 }
 
 // ParseAnno 解析注释
