@@ -2,10 +2,26 @@ package file
 
 import (
 	"bytes"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/xuri/excelize/v2"
 )
+
+type mockExcel struct {
+	*excelize.File
+}
+
+func (e *mockExcel) SetSheetCellValue(sheet, cell string, value interface{}) error {
+	return e.File.SetCellValue(sheet, cell, value)
+}
+func (e *mockExcel) Write(w io.Writer) error {
+	return e.File.Write(w)
+}
+func (e *mockExcel) GetSheetRows(sheet string) ([][]string, error) {
+	return e.File.GetRows(sheet)
+}
 
 // Define a mock writer to be used in tests
 type mockWriter struct {
@@ -24,8 +40,9 @@ func TestExcelExporter(t *testing.T) {
 	headers := [][]string{{"Header1", "Header2"}}
 	rows := [][]string{{"Value1", "Value2"}}
 
+	f := excelize.NewFile()
 	// Call the ExcelExporter function with the sheet name and options
-	exporter := ExcelExporter(DEF_SHEET_NAME)
+	exporter := ExcelExporter(&mockExcel{File: f}, excelize.CoordinatesToCellName, DEF_SHEET_NAME)
 
 	// Call the returned Exporter function with the mock writer, headers, and rows
 	err := exporter(mockTar, headers, rows...)
@@ -42,11 +59,14 @@ func TestExcelExporter(t *testing.T) {
 
 func TestExcelImporter(t *testing.T) {
 	// Create a mock reader with some test data
-	exporter := ExcelExporter(DEF_SHEET_NAME)
+	f1 := excelize.NewFile()
+	mExcel1 := &mockExcel{File: f1}
+	exporter := ExcelExporter(mExcel1, excelize.CoordinatesToCellName, DEF_SHEET_NAME)
 	want := &mockWriter{}
 	_ = exporter(want, [][]string{{"a", "b"}}, []string{"1", "2"})
 	// Call the ExcelImporter function with the sheet name and options
-	importer := ExcelImporter(DEF_SHEET_NAME)
+	mExcel2 := &mockExcel{File: f1}
+	importer := ExcelImporter(mExcel2, DEF_SHEET_NAME)
 	rows, err := importer(want)
 	// Assert that there were no errors during import
 	assert.NoError(t, err)

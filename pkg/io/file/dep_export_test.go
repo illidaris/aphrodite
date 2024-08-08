@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	fileex "github.com/illidaris/file/path"
+	"github.com/xuri/excelize/v2"
 )
 
 // TestToFilePath tests the ToFilePath function for various scenarios.
@@ -31,7 +32,9 @@ func TestToFilePath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			exr := ExcelExporter(DEF_SHEET_NAME) // Assuming Exporter is a type in your package
+			f1 := excelize.NewFile()
+			mExcel1 := &mockExcel{File: f1}
+			exr := ExcelExporter(mExcel1, excelize.CoordinatesToCellName, DEF_SHEET_NAME) // Assuming Exporter is a type in your package
 			// Call the function under test
 			err := exr.ToFilePath(tt.target, tt.headers, tt.rows...)
 			if err != nil {
@@ -45,7 +48,9 @@ func TestToFilePath(t *testing.T) {
 			if !b {
 				t.Errorf("%s not exist", tt.target)
 			}
-			imr := ExcelImporter(DEF_SHEET_NAME)
+			f2, _ := excelize.OpenFile(tt.target)
+			mExcel2 := &mockExcel{File: f2}
+			imr := ExcelImporter(mExcel2, DEF_SHEET_NAME)
 			rows, err := imr.FromFilePath(tt.target)
 			if err != nil {
 				t.Error(err.Error())
