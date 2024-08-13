@@ -35,6 +35,7 @@ type BaseOption struct {
 	DataBase       string                        `json:"dataBase"`      // db name
 	DbShardingKey  []any                         `json:"dbShardingKey"` // db sharding key
 	TbShardingKey  []any                         `json:"tbShardingKey"` // table sharding key
+	UpdatedMap     map[string]any                `json:"-"`             // updated map
 	IDGenerate     func(ctx context.Context) any `json:"-"`             // id generate func
 	IterativeFuncs []func(any)                   `json:"-"`             // iterative func
 }
@@ -158,6 +159,13 @@ func WithDbShardingKey(v ...any) BaseOptionFunc {
 func WithTbShardingKey(v ...any) BaseOptionFunc {
 	return func(o *BaseOption) {
 		o.TbShardingKey = v
+	}
+}
+
+// WithUpdatedMap
+func WithUpdatedMap(v map[string]any) BaseOptionFunc {
+	return func(o *BaseOption) {
+		o.UpdatedMap = v
 	}
 }
 
