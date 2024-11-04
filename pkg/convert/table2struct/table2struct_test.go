@@ -5,8 +5,56 @@ import (
 	"testing"
 	"time"
 
+	"github.com/smartystreets/goconvey/convey"
 	"github.com/spf13/cast"
 )
+
+func TestTable2StructMut(t *testing.T) {
+	type StudentInfo struct {
+		Id        int       `json:"id"`
+		Name      string    `json:"name"`
+		Age       uint16    `json:"age"`
+		IsStudent bool      `json:"is_student"`
+		CreateAt  time.Time `json:"create_at"`
+		Desc      string    `json:"desc"`
+	}
+	john := StudentInfo{Id: 3, Name: "John", Age: 25, IsStudent: true, CreateAt: cast.ToTime("2023-05-07 22:23:24"), Desc: "@!###"}
+	mike := StudentInfo{Id: 1, Name: "Mike", Age: 21, IsStudent: false, CreateAt: cast.ToTime("2023-04-06 22:23:24"), Desc: "xasad"}
+	peter := StudentInfo{Id: 2, Name: "Peter", Age: 26, IsStudent: true, CreateAt: cast.ToTime("2024-11-07 22:23:24"), Desc: "^^^^"}
+	eg1Rows := [][]string{
+		{"name", "age", "is_student", "create_at", "desc", "id"},
+		{"John", "25", "true", "2023-05-07 22:23:24", "@!###", "3"},
+		{"Mike", "21", "false", "2023-04-06 22:23:24", "xasad", "1"},
+		{"Peter", "26", "true", "2024-11-07 22:23:24", "^^^^", "2"},
+	}
+	eg1es := []StudentInfo{john, mike, peter}
+	eg1ptrs := []*StudentInfo{&john, &mike, &peter}
+	convey.Convey("TestTable2StructMut", t, func() {
+		convey.Convey("slice", func() {
+			students := []StudentInfo{}
+			err := Table2Struct(&students, eg1Rows)
+			convey.So(err, convey.ShouldBeNil)
+			for i := 0; i < len(students); i++ {
+				convey.So(students[i], convey.ShouldEqual, eg1es[i])
+				convey.So(students[i], convey.ShouldEqual, *eg1ptrs[i])
+			}
+		})
+		convey.Convey("slice ptr", func() {
+			students := []*StudentInfo{}
+			err := Table2Struct(&students, eg1Rows)
+			convey.So(err, convey.ShouldBeNil)
+			for i := 0; i < len(students); i++ {
+				convey.So(students[i].Id, convey.ShouldEqual, eg1ptrs[i].Id)
+			}
+			for _, v := range students {
+				v.Name = v.Name + "|X"
+			}
+			for i := 0; i < len(students); i++ {
+				convey.So(students[i].Name, convey.ShouldEqual, eg1es[i].Name+"|X")
+			}
+		})
+	})
+}
 
 func TestTable2Struct(t *testing.T) {
 	type StudentInfo struct {

@@ -195,6 +195,10 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 		return
 	}
 	dataType := dataValue.Elem().Type().Elem()
+	dataTypeKind := dataType.Kind()
+	if dataTypeKind == reflect.Pointer {
+		dataType = dataType.Elem()
+	}
 	// 遍历rows进行类型转换
 	for rowIndex, row := range rows {
 		// 处理表头
@@ -263,7 +267,12 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 			}
 		}
 		// 将转换后的结构体实例添加到目标切片中
-		dataValue.Elem().Set(reflect.Append(dataValue.Elem(), newData))
+		if dataTypeKind == reflect.Pointer {
+			dataValue.Elem().Set(reflect.Append(dataValue.Elem(), newData.Addr()))
+		} else {
+			dataValue.Elem().Set(reflect.Append(dataValue.Elem(), newData))
+		}
+
 	}
 	return
 }
