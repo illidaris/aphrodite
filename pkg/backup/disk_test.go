@@ -2,6 +2,7 @@ package backup
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path"
 	"testing"
@@ -9,6 +10,40 @@ import (
 	"github.com/smartystreets/goconvey/convey"
 )
 
+func TestB(t *testing.T) {
+	mm := map[int]map[int]*Person{
+		3: {
+			1: {
+				Name: "tes2222t",
+				Age:  1,
+			},
+		},
+		1: {
+			1: {
+				Name: "t2024",
+				Age:  2024,
+			},
+		},
+	}
+	add(mm)
+	bs, _ := json.Marshal(mm)
+	println(string(bs))
+}
+
+type Person struct {
+	Name string
+	Age  int
+}
+
+func add(m map[int]map[int]*Person) {
+	m[1] = map[int]*Person{}
+	m[1] = map[int]*Person{
+		1: {
+			Name: "test",
+			Age:  1,
+		},
+	}
+}
 func TestBackup(t *testing.T) {
 	convey.Convey("TestBackup", t, func() {
 		tempPath, err := os.MkdirTemp(os.TempDir(), "tmp")
