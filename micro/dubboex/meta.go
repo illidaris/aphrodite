@@ -66,6 +66,16 @@ func LoadConfig(configPath string) error {
 	return InitFrmDubboNacos()
 }
 
+// Get 读取配置
+func Get(key string) interface{} {
+	return GetById(core.Nacos.Clientconfig.Appname, key)
+}
+
+// GetById 读取配置
+func GetById(name, key string) interface{} {
+	return Load(name).Get(key)
+}
+
 // GetDubboInstance 获取Dubbo实例
 func GetDubboInstance() *dubbo.Instance {
 	return ins
@@ -76,7 +86,10 @@ func Store(key, val string) {
 	v := viper.New()
 	v.SetConfigType("yaml")
 	if err := v.ReadConfig(bytes.NewReader([]byte(cast.ToString(val)))); err != nil {
-		println(err.Error())
+		v.SetConfigType("json")
+		if err := v.ReadConfig(bytes.NewReader([]byte(cast.ToString(val)))); err != nil {
+			return
+		}
 	}
 	vipers.Store(key, v)
 }
