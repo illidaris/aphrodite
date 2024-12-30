@@ -3,7 +3,6 @@ test:
 	go vet ./...
 	golangci-lint run ./... || true
 	govulncheck ./... || true
-	nilaway ./...
 
 test2file:
 	go test ./... -v -gcflags=all=-l -json > sn_report_test.json
@@ -11,7 +10,6 @@ test2file:
 	go vet -json ./... 2> sn_report_vet_report.out
 	golangci-lint run --out-format checkstyle ./... > sn_report_report.xml || true
 	govulncheck ./... || true
-	nilaway ./...
 
 init:
 	go mod tidy

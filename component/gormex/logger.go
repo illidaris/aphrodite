@@ -125,17 +125,16 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql 
 	}
 	elapsed := time.Since(begin)
 	sql, rows := fc()
-	msg := fmt.Sprintf(SqlLogFormat, elapsed.Milliseconds(), rows, err, sql)
 	switch {
 	case err != nil && l.LogLevel >= logger.Error && (!errors.Is(err, logger.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError):
-		l.Error(ctx, msg)
+		l.Error(ctx, SqlLogFormat, elapsed.Milliseconds(), rows, err, sql)
 	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.LogLevel >= logger.Warn:
-		l.Warn(ctx, "[SLOW]"+msg)
+		l.Warn(ctx, "[SLOW]"+SqlLogFormat, elapsed.Milliseconds(), rows, err, sql)
 	case l.LogLevel == logger.Info:
 		if l.IgnoreNoAffect && err == nil && rows == 0 {
 			return
 		}
-		l.Info(ctx, msg)
+		l.Info(ctx, SqlLogFormat, elapsed.Milliseconds(), rows, err, sql)
 	}
 }
 

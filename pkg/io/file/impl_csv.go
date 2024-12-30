@@ -19,10 +19,10 @@ func CsvExporter() Exporter {
 	return func(tar io.Writer, headers [][]string, rows ...[]string) error {
 		wt := csv.NewWriter(tar)
 		for _, header := range headers {
-			wt.Write(header)
+			_ = wt.Write(header)
 		}
 		for _, header := range rows {
-			wt.Write(header)
+			_ = wt.Write(header)
 		}
 		wt.Flush()
 		return nil

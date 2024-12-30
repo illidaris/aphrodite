@@ -31,13 +31,13 @@ func JsonExporter(pretty bool) Exporter {
 			if err != nil {
 				return err
 			}
-			tar.Write(bs)
+			_, _ = tar.Write(bs)
 		} else {
 			bs, err := json.Marshal(result)
 			if err != nil {
 				return err
 			}
-			tar.Write(bs)
+			_, _ = tar.Write(bs)
 		}
 		return nil
 	}
