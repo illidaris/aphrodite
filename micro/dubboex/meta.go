@@ -14,6 +14,7 @@ import (
 // 常量定义
 const (
 	CONFIG_SERVER = "_viper_config_server" // 配置服务器的键名
+	TMP_DIR       = "tmp"                  // 临时文件路径
 	TMP_PORT_FILE = "tmp/port.txt"         // 临时端口文件路径
 )
 

@@ -14,6 +14,7 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/registry"
 	"github.com/illidaris/aphrodite/pkg/backup"
 	"github.com/illidaris/aphrodite/pkg/netex"
+	pathEx "github.com/illidaris/file/path"
 	"github.com/spf13/cast"
 )
 
@@ -139,8 +140,10 @@ func (app AppConfig) GetPort() int {
 	if app.Nacos.Service.Port > 0 {
 		return app.Nacos.Service.Port
 	}
-	rootDir, _ := os.Getwd()
-	tmpPortFile := path.Join(rootDir, TMP_PORT_FILE)
+	rootDir, _ := os.Getwd()              // 根路径
+	tmpDir := path.Join(rootDir, TMP_DIR) // 临时文件路径
+	_ = pathEx.MkdirIfNotExist(tmpDir)    // 不存在则创建
+	tmpPortFile := path.Join(tmpDir, TMP_PORT_FILE)
 	portStr := backup.ReadFrmDisk(tmpPortFile)
 	port := cast.ToInt(portStr)
 	if port > 0 {
