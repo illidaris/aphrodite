@@ -8,6 +8,7 @@ import (
 	"dubbo.apache.org/dubbo-go/v3"
 	"dubbo.apache.org/dubbo-go/v3/config_center"
 	log "dubbo.apache.org/dubbo-go/v3/logger"
+	"dubbo.apache.org/dubbo-go/v3/metrics"
 	"dubbo.apache.org/dubbo-go/v3/otel/trace"
 	"dubbo.apache.org/dubbo-go/v3/protocol"
 	"dubbo.apache.org/dubbo-go/v3/registry"
@@ -52,6 +53,7 @@ type Service struct {
 	Healthy     bool     `yaml:"healthy"`
 	Ip          string   `yaml:"ip"`
 	Port        int      `yaml:"port"`
+	MetricPort  int      `yaml:"metricport"`
 }
 
 type Others struct {
@@ -117,6 +119,18 @@ func (app AppConfig) DefaultInstanceOptions() []dubbo.InstanceOption {
 	}
 	protocolOpts = append(protocolOpts, protocol.WithPort(app.GetPort()))
 	opts = append(opts, dubbo.WithProtocol(protocolOpts...))
+
+	if app.Nacos.Service.MetricPort > 0 {
+		opts = append(opts, dubbo.WithMetrics(
+			metrics.WithEnabled(),                          // default false
+			metrics.WithPrometheus(),                       // set prometheus metric, default prometheus
+			metrics.WithPrometheusExporterEnabled(),        // enable prometheus exporter default false
+			metrics.WithPort(app.Nacos.Service.MetricPort), // prometheus http exporter listen at 9099,default 9090
+			metrics.WithMetadataEnabled(),                  // enable metadata center metrics, default true
+			metrics.WithRegistryEnabled(),                  // enable registry metrics, default true
+			metrics.WithConfigCenterEnabled(),              // enable config center metrics, default true)
+		))
+	}
 	return opts
 }
 
