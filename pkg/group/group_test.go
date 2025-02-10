@@ -3,6 +3,7 @@ package group
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/smartystreets/goconvey/convey"
 )
@@ -70,6 +71,28 @@ func TestGroupFunc(t *testing.T) {
 			affect, errM := GroupFunc(func(v ...*demo) (int64, error) {
 				for _, item := range v {
 					println(item.Name)
+				}
+				return int64(len(v)), nil
+			}, batch, demos...)
+			convey.So(affect, convey.ShouldEqual, total)
+			convey.So(len(errM), convey.ShouldEqual, 0)
+		})
+	})
+}
+
+// TestGroupFunc
+func TestGroupBaseFunc(t *testing.T) {
+	convey.Convey("TestGroupBase", t, func() {
+		demos := []int64{
+			5, 7, 8, 9, 1, 2, 3, 11, 55, 88,
+		}
+		batch := 2
+		total := len(demos)
+		convey.Convey("GroupBaseFunc", func() {
+			affect, errM := GroupBaseFunc(func(v ...int64) (int64, error) {
+				time.Sleep(time.Millisecond * 10)
+				for _, item := range v {
+					println(item)
 				}
 				return int64(len(v)), nil
 			}, batch, demos...)
