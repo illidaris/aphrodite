@@ -14,7 +14,6 @@ import (
 )
 
 type BaseRepository[T dependency.IEntity] struct{} // base repository
-
 // BaseCreate
 func (r *BaseRepository[T]) BaseCreate(ctx context.Context, ps []*T, opts ...dependency.BaseOptionFunc) (int64, error) {
 	if len(ps) == 0 {
