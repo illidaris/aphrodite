@@ -3,8 +3,6 @@ package mongoex
 import (
 	"context"
 	"errors"
-	"fmt"
-	"time"
 
 	"github.com/illidaris/aphrodite/component/embedded"
 
@@ -15,7 +13,7 @@ import (
 
 var (
 	ErrCurNil      = errors.New("cur is nil")
-	MongoComponent = embedded.NewComponent[*options.ClientOptions]()
+	MongoComponent = embedded.NewComponent[*mongo.Client]()
 	MongoNameMap   = map[string]string{}
 	getKey         func(ctx context.Context) string
 )
@@ -24,42 +22,23 @@ func SetGetKeyFunc(f func(ctx context.Context) string) {
 	getKey = f
 }
 
-func CheckLink(ctx context.Context, name, uri string) error {
-	clientOptions := options.Client().ApplyURI(uri).SetLoggerOptions(NewLoggerOptions())
-	return Invoke(ctx, clientOptions, func(c *mongo.Client) error {
-		subCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-		return c.Ping(subCtx, readpref.Primary())
-	})
-}
-
-func Invoke(ctx context.Context, opts *options.ClientOptions, cb func(c *mongo.Client) error) error {
-	client, err := mongo.Connect(ctx, opts)
-	if err != nil {
-		println(err.Error())
-	}
-	defer func() {
-		if disConErr := client.Disconnect(ctx); disConErr != nil {
-			println(disConErr.Error())
-		}
-	}()
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("mongo_invoke_panic：%v \n", r)
-		}
-	}()
-	return cb(client)
-}
-
 func NewMongo(key, dbname, conn string) {
-	v := options.Client().ApplyURI(conn).SetLoggerOptions(NewLoggerOptions())
-	MongoComponent.NewWriter(key, v)
-	MongoComponent.NewReader(key, v)
+	opts := options.Client().ApplyURI(conn).SetLoggerOptions(NewLoggerOptions())
+	client, err := mongo.Connect(context.Background(), opts)
+	if err != nil {
+		l.Error(err.Error())
+	}
+	err = client.Ping(context.Background(), readpref.Primary())
+	if err != nil {
+		l.Error(err.Error())
+	}
+	MongoComponent.NewWriter(key, client)
+	MongoComponent.NewReader(key, client)
 	MongoNameMap[key] = dbname
 }
 
 // GetNamedMongoClient from mongo map
-func GetNamedMongoClient(key string) *options.ClientOptions {
+func GetNamedMongoClient(key string) *mongo.Client {
 	return MongoComponent.GetWriter(key)
 }
 

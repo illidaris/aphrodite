@@ -157,20 +157,21 @@ func (r *BaseRepository[T]) BuildConds(ctx context.Context, t *T, opt *dependenc
 	if opt.DataBase == "" {
 		opt.DataBase = any(t).(dependency.IPo).Database()
 	}
+	var realDb string
 	if opt != nil && opt.DataBase != "" {
 		// 转化真实的数据库
-		database := GetMongoNameByKey(opt.DataBase)
-		mongoopts := CoreById(opt.DataBase)
-		return Invoke(ctx, mongoopts, func(c *mongo.Client) error {
-			return dbcallback(c.Database(database))
-		})
+		realDb = GetMongoNameByKey(opt.DataBase)
 	} else {
-		dbname := GetMongoNameByCtx(ctx)
-		mongoopts := CoreByCtx(ctx)
-		return Invoke(ctx, mongoopts, func(c *mongo.Client) error {
-			return dbcallback(c.Database(dbname))
+		realDb = GetMongoNameByCtx(ctx)
+	}
+	session := mongo.SessionFromContext(ctx)
+	if session == nil {
+		c := MongoComponent.GetWriter(opt.DataBase)
+		return c.UseSessionWithOptions(ctx, options.Session(), func(sc mongo.SessionContext) error {
+			return dbcallback(sc.Client().Database(realDb))
 		})
 	}
+	return dbcallback(session.Client().Database(realDb))
 }
 
 // BuildFrmOption
@@ -289,13 +290,4 @@ func BaseGroup[T dependency.IEntity](f func(v ...*T) (int64, error), opt *depend
 		return affect, errors.New(errMsg)
 	}
 	return affect, nil
-}
-
-func CoreById(id string) *options.ClientOptions {
-	return GetNamedMongoClient(id)
-}
-
-func CoreByCtx(ctx context.Context) *options.ClientOptions {
-	key := getKey(ctx)
-	return GetNamedMongoClient(key)
 }
