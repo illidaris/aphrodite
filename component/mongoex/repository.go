@@ -156,13 +156,11 @@ func (r *BaseRepository[T]) BuildConds(ctx context.Context, t *T, opt *dependenc
 	if opt.DataBase == "" {
 		opt.DataBase = any(t).(dependency.IPo).Database()
 	}
-	var realDb string
-	if opt != nil && opt.DataBase != "" {
-		// 转化真实的数据库
-		realDb = GetMongoNameByKey(opt.DataBase)
-	} else {
-		realDb = GetMongoNameByCtx(ctx)
+	if opt.DataBase == "" {
+		opt.DataBase = getKey(ctx)
 	}
+	// 转化真实的数据库
+	realDb := GetMongoNameByKey(opt.DataBase)
 	session := mongo.SessionFromContext(ctx)
 	if session == nil {
 		c := MongoComponent.GetWriter(opt.DataBase)

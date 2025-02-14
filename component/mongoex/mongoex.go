@@ -3,6 +3,7 @@ package mongoex
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/illidaris/aphrodite/component/embedded"
 	"github.com/illidaris/aphrodite/pkg/group"
@@ -25,6 +26,9 @@ func SetGetKeyFunc(f func(ctx context.Context) string) {
 }
 
 func NewMongo(key, dbname, conn string) error {
+	if !strings.Contains(conn, dbname) {
+		return errors.New("dbname not in conn, please check")
+	}
 	opts := options.Client().ApplyURI(conn).SetLoggerOptions(NewLoggerOptions())
 	client, err := mongo.Connect(context.Background(), opts)
 	if err != nil {
