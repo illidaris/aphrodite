@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/illidaris/aphrodite/component/embedded"
+	"github.com/illidaris/aphrodite/pkg/group"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,6 +17,7 @@ var (
 	MongoComponent = embedded.NewComponent[*mongo.Client]()
 	MongoNameMap   = map[string]string{}
 	getKey         func(ctx context.Context) string
+	clients        []*mongo.Client
 )
 
 func SetGetKeyFunc(f func(ctx context.Context) string) {
@@ -35,7 +37,20 @@ func NewMongo(key, dbname, conn string) error {
 	MongoComponent.NewWriter(key, client)
 	MongoComponent.NewReader(key, client)
 	MongoNameMap[key] = dbname
+	clients = append(clients, client)
 	return nil
+}
+
+func CloseAllMongo(ctx context.Context) {
+	_, _ = group.GroupFunc(func(cs ...*mongo.Client) (int64, error) {
+		for _, c := range cs {
+			err := c.Disconnect(ctx)
+			if err != nil {
+				println("mongo client disconnect error", err.Error())
+			}
+		}
+		return 0, nil
+	}, 1, clients...)
 }
 
 // GetNamedMongoClient from mongo map
