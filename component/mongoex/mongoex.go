@@ -22,19 +22,20 @@ func SetGetKeyFunc(f func(ctx context.Context) string) {
 	getKey = f
 }
 
-func NewMongo(key, dbname, conn string) {
+func NewMongo(key, dbname, conn string) error {
 	opts := options.Client().ApplyURI(conn).SetLoggerOptions(NewLoggerOptions())
 	client, err := mongo.Connect(context.Background(), opts)
 	if err != nil {
-		l.Error(err.Error())
+		return err
 	}
 	err = client.Ping(context.Background(), readpref.Primary())
 	if err != nil {
-		l.Error(err.Error())
+		return err
 	}
 	MongoComponent.NewWriter(key, client)
 	MongoComponent.NewReader(key, client)
 	MongoNameMap[key] = dbname
+	return nil
 }
 
 // GetNamedMongoClient from mongo map
