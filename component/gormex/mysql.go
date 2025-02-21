@@ -2,6 +2,7 @@ package gormex
 
 import (
 	"fmt"
+	"strings"
 	"sync/atomic"
 
 	"github.com/illidaris/aphrodite/component/embedded"
@@ -46,17 +47,19 @@ func SyncDbStruct(dbShardingKeys [][]any, pos ...dependency.IPo) error {
 	ss := trans2Table(dbShardingKeys, pos...)
 	total := len(ss)
 	batch := 10
-	affect := int32(1)
+	affect := int32(0)
 	_, _ = group.GroupFunc(func(subss ...*initTable) (int64, error) {
-		for _, s := range subss {
+		resultLogs := []string{}
+		for index, s := range subss {
 			db := MySqlComponent.GetWriter(s.Db)
 			if db == nil {
 				continue
 			}
-			step := atomic.AddInt32(&affect, 1)
 			err := db.Table(s.Table).AutoMigrate(s.P)
-			_, _ = fmt.Printf("库%s表%s结构初始化[%d/%d]： 初始化，%s\n", s.Db, s.Table, step, total, err)
+			resultLogs = append(resultLogs, fmt.Sprintf("  %d.库%s表%s结构初始化, 结果:%v", index, s.Db, s.Table, err))
+			_ = atomic.AddInt32(&affect, 1)
 		}
+		_, _ = fmt.Printf("数据库结构初始化进度[%v/%v]： \n%s\n", affect, total, strings.Join(resultLogs, "\n"))
 		return 0, nil
 	}, batch, ss...)
 	_, _ = fmt.Printf("初始化完成总计初始化[%v/%v]", affect, total)
