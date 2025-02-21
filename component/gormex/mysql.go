@@ -1,11 +1,12 @@
 package gormex
 
 import (
-	"errors"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/illidaris/aphrodite/component/embedded"
 	"github.com/illidaris/aphrodite/pkg/dependency"
+	"github.com/illidaris/aphrodite/pkg/group"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -44,14 +45,21 @@ func NewMySqlClient(dsn string, log logger.Interface) (*gorm.DB, error) {
 func SyncDbStruct(dbShardingKeys [][]any, pos ...dependency.IPo) error {
 	ss := trans2Table(dbShardingKeys, pos...)
 	total := len(ss)
-	for index, s := range ss {
-		db := MySqlComponent.GetWriter(s.Db)
-		if db == nil {
-			return errors.New("db is nil")
+	batch := 10
+	affect := int32(1)
+	_, _ = group.GroupFunc(func(subss ...*initTable) (int64, error) {
+		for _, s := range subss {
+			db := MySqlComponent.GetWriter(s.Db)
+			if db == nil {
+				continue
+			}
+			step := atomic.AddInt32(&affect, 1)
+			err := db.Table(s.Table).AutoMigrate(s.P)
+			_, _ = fmt.Printf("库%s表%s结构初始化[%d/%d]： 初始化，%s\n", s.Db, s.Table, step, total, err)
 		}
-		err := db.Table(s.Table).AutoMigrate(s.P)
-		_, _ = fmt.Printf("库%s表%s结构初始化[%d/%d]： 初始化，%s\n", s.Db, s.Table, index+1, total, err)
-	}
+		return 0, nil
+	}, batch, ss...)
+	_, _ = fmt.Printf("初始化完成总计初始化[%v/%v]", affect, total)
 	return nil
 }
 
