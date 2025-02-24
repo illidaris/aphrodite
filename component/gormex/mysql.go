@@ -48,7 +48,7 @@ func SyncDbStruct(dbShardingKeys [][]any, pos ...dependency.IPo) error {
 	ss := trans2Table(dbShardingKeys, pos...)
 	total := len(ss)
 	batch := 10
-	bar := progressbar.Default(846)
+	bar := progressbar.Default(int64(total))
 	errMap := sync.Map{}
 	affect := int32(0)
 	_, _ = group.GroupFunc(func(subss ...*initTable) (int64, error) {
