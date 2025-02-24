@@ -2,13 +2,14 @@ package gormex
 
 import (
 	"fmt"
-	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/illidaris/aphrodite/component/embedded"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/group"
 
+	"github.com/schollz/progressbar/v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -47,22 +48,29 @@ func SyncDbStruct(dbShardingKeys [][]any, pos ...dependency.IPo) error {
 	ss := trans2Table(dbShardingKeys, pos...)
 	total := len(ss)
 	batch := 10
+	bar := progressbar.Default(846)
+	errMap := sync.Map{}
 	affect := int32(0)
 	_, _ = group.GroupFunc(func(subss ...*initTable) (int64, error) {
-		resultLogs := []string{}
-		for index, s := range subss {
+		for _, s := range subss {
 			db := MySqlComponent.GetWriter(s.Db)
 			if db == nil {
 				continue
 			}
 			err := db.Table(s.Table).AutoMigrate(s.P)
-			resultLogs = append(resultLogs, fmt.Sprintf("  %d.库%s表%s结构初始化, 结果:%v", index, s.Db, s.Table, err))
+			if err != nil {
+				errMap.Store(fmt.Sprintf("[%v.%v]", s.Db, s.Table), err.Error())
+			}
 			_ = atomic.AddInt32(&affect, 1)
+			_ = bar.Add(1)
 		}
-		_, _ = fmt.Printf("数据库结构初始化进度[%v/%v]： \n%s\n", affect, total, strings.Join(resultLogs, "\n"))
 		return 0, nil
 	}, batch, ss...)
 	_, _ = fmt.Printf("初始化完成总计初始化[%v/%v]", affect, total)
+	errMap.Range(func(key, value any) bool {
+		fmt.Printf("%v初始化失败：%v\n", key, value)
+		return true
+	})
 	return nil
 }
 
