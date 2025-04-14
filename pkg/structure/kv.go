@@ -5,8 +5,8 @@ type KV[K comparable, V any] struct {
 	Value V
 }
 
-func NewKVs[K comparable, V any]() KVs[K, V] {
-	return KVs[K, V]{
+func NewKVs[K comparable, V any]() *KVs[K, V] {
+	return &KVs[K, V]{
 		s: make([]*KV[K, V], 0),
 		m: make(map[K]*KV[K, V]),
 	}
