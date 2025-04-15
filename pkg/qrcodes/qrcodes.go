@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
 	"image/png"
 	"io"
@@ -15,11 +16,11 @@ import (
 )
 
 // ImageWithLogo 将底图和logo合并
-func ImageWithLogo(src, logo io.Reader, logoP int, out io.Writer) error {
+func ImageWithLogo(src, logo io.Reader, logoP, zoom int, out io.Writer) error {
 	if logoP > 10 || logoP < 0 {
 		return fmt.Errorf("logo占比必须在0-10之间")
 	}
-	// 将二维码文件接码成图片
+	// 将二维码文件接码成图片 370 20  370 20
 	srcImg, srcName, srcErr := image.Decode(src)
 	if srcErr != nil {
 		return srcErr
@@ -27,6 +28,14 @@ func ImageWithLogo(src, logo io.Reader, logoP int, out io.Writer) error {
 	if srcImg == nil {
 		return fmt.Errorf("source %v %v", srcName, srcErr)
 	}
+	// 调整原图大小（二维码大小的1/18.5）
+	srcImgSize := srcImg.Bounds().Dx() / 10 * zoom
+	resizedSrc := resize.Resize(uint(srcImgSize), 0, srcImg, resize.Lanczos3)
+	// 计算Logo位置（居中）
+	srcOffset := image.Pt(
+		(srcImg.Bounds().Dx()-resizedSrc.Bounds().Dx())/2,
+		(srcImg.Bounds().Dy()-resizedSrc.Bounds().Dy())/2,
+	)
 	// 将填充图解码成png图片
 	logoImg, logoName, logoErr := image.Decode(logo)
 	if logoErr != nil {
@@ -45,7 +54,9 @@ func ImageWithLogo(src, logo io.Reader, logoP int, out io.Writer) error {
 	)
 	// 创建画布并合并图片
 	canvas := image.NewRGBA(srcImg.Bounds())
-	draw.Draw(canvas, srcImg.Bounds(), srcImg, image.Point{}, draw.Over)
+	white := image.NewUniform(color.White) // 使用draw包中的Draw方法快速填充
+	draw.Draw(canvas, srcImg.Bounds(), white, image.Point{}, draw.Src)
+	draw.Draw(canvas, resizedSrc.Bounds().Add(srcOffset), resizedSrc, image.Point{}, draw.Over)
 	draw.Draw(canvas, resizedLogo.Bounds().Add(offset), resizedLogo, image.Point{}, draw.Over)
 	return png.Encode(out, canvas)
 }
