@@ -18,6 +18,10 @@ func (r Pager) GetTotalRecord() int64 {
 	return r.TotalRecord
 }
 
+func (r Pager) GetTotalPage() int64 {
+	return r.TotalPage
+}
+
 func (p *Pager) Paginator() *Pager {
 	p.TotalPage = getTotalPage(p.TotalRecord, p.GetSize())
 	return p
