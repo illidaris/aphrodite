@@ -33,6 +33,10 @@ type Page struct {
 	Sorts     []string    `json:"sorts" form:"sorts" uri:"sorts" url:"sorts,omitempty"`                                      // eg; field|desc
 }
 
+func (dto *Page) SetPageIndex(index int64) {
+	dto.PageIndex = index
+}
+
 func (dto *Page) GetPageIndex() int64 {
 	return dto.PageIndex
 }
