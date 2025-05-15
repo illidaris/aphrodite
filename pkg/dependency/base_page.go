@@ -1,5 +1,10 @@
 package dependency
 
+type ISetPage interface {
+	IPage
+	SetPageIndex(index int64)
+}
+
 // IPage page request
 type IPage interface {
 	GetPageIndex() int64
