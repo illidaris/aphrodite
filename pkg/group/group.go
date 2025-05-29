@@ -6,19 +6,49 @@ import (
 	"sync/atomic"
 )
 
+const (
+	// DefaultBatchSize 默认的批次大小
+	DEF_BATCH_SIZE      = 100
+	DEF_MAX_GROUP_COUNT = 1000
+)
+
+var maxGroupCount = DEF_MAX_GROUP_COUNT
+
+func SetMaxGroupCount(count int) {
+	if count > 0 {
+		maxGroupCount = count
+	}
+}
+
 // Count函数用于计算切片p中元素的批次数量。
 // 参数batch表示每个批次的元素数量。
 // 参数p为切片指针，切片中的元素类型为any。
 // 返回值为int类型，表示切片p中的元素能够组成的批次数量。
 func Count[T any](batch int, p ...*T) int {
+	if batch == 0 {
+		batch = len(p) / DEF_BATCH_SIZE
+	}
+	if batch == 0 {
+		batch = 1
+	}
+	// 防止负提升
+	if len(p) < DEF_BATCH_SIZE {
+		batch = 1
+	}
 	total := len(p) // 获取切片p的长度
 	if total == 0 { // 判断切片p是否为空
 		return 0 // 返回0表示无法组成批次
 	}
+	count := 0
 	if int(total)%batch == 0 { // 判断切片p的元素数量能否整除batch
-		return int(total) / batch // 返回能够整除的结果，即批次数量
+		count = int(total) / batch // 返回能够整除的结果，即批次数量
+	} else {
+		count = int(total)/batch + 1 // 返回无法整除的结果，即批次数量加一
 	}
-	return int(total)/batch + 1 // 返回无法整除的结果，即批次数量加一
+	if count > maxGroupCount {
+		count = maxGroupCount
+	}
+	return count
 }
 
 // Group函数将给定的切片p按照batch的大小进行分组，并返回分组后的结果。
@@ -34,7 +64,7 @@ func Group[T any](batch int, p ...*T) [][]*T {
 	if p == nil || total == 0 {
 		return groups
 	}
-	gCount := Count[T](batch, p...)
+	gCount := Count(batch, p...)
 	if gCount == 0 {
 		return groups
 	}
@@ -64,7 +94,7 @@ func GroupFunc[T any](f func(v ...*T) (int64, error), batch int, p ...*T) (int64
 		affectTotal int64
 		errM        = map[int]error{}
 	)
-	groups := Group[T](batch, p...) // 调用Group函数，将参数p划分为多个批次，并返回每个批次的参数列表
+	groups := Group(batch, p...) // 调用Group函数，将参数p划分为多个批次，并返回每个批次的参数列表
 
 	// 遍历每个批次的参数列表
 	for index, g := range groups {
@@ -105,14 +135,30 @@ func GroupFunc[T any](f func(v ...*T) (int64, error), batch int, p ...*T) (int64
 }
 
 func CountBase[T any](batch int, p ...T) int {
+	if batch == 0 {
+		batch = len(p) / DEF_BATCH_SIZE
+	}
+	if batch == 0 {
+		batch = 1
+	}
+	// 防止负提升
+	if len(p) < DEF_BATCH_SIZE {
+		batch = 1
+	}
 	total := len(p) // 获取切片p的长度
 	if total == 0 { // 判断切片p是否为空
 		return 0 // 返回0表示无法组成批次
 	}
+	count := 0
 	if int(total)%batch == 0 { // 判断切片p的元素数量能否整除batch
-		return int(total) / batch // 返回能够整除的结果，即批次数量
+		count = int(total) / batch // 返回能够整除的结果，即批次数量
+	} else {
+		count = int(total)/batch + 1 // 返回无法整除的结果，即批次数量加一
 	}
-	return int(total)/batch + 1 // 返回无法整除的结果，即批次数量加一
+	if count > maxGroupCount {
+		count = maxGroupCount
+	}
+	return count
 }
 
 func GroupBase[T any](batch int, p ...T) [][]T {
@@ -121,7 +167,7 @@ func GroupBase[T any](batch int, p ...T) [][]T {
 	if p == nil || total == 0 {
 		return groups
 	}
-	gCount := CountBase[T](batch, p...)
+	gCount := CountBase(batch, p...)
 	if gCount == 0 {
 		return groups
 	}
@@ -146,7 +192,7 @@ func GroupBaseFunc[T any](f func(v ...T) (int64, error), batch int, p ...T) (int
 		affectTotal int64
 		errM        = map[int]error{}
 	)
-	groups := GroupBase[T](batch, p...) // 调用Group函数，将参数p划分为多个批次，并返回每个批次的参数列表
+	groups := GroupBase(batch, p...) // 调用Group函数，将参数p划分为多个批次，并返回每个批次的参数列表
 
 	// 遍历每个批次的参数列表
 	for index, g := range groups {

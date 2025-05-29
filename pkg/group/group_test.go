@@ -8,6 +8,59 @@ import (
 	"github.com/smartystreets/goconvey/convey"
 )
 
+func TestCount(t *testing.T) {
+	convey.Convey("TestGroup", t, func() {
+		convey.Convey("CountBase batch 0 total 1000", func() {
+			datas := []int64{}
+			for i := 0; i < 1000; i++ {
+				datas = append(datas, int64(i))
+			}
+			res := CountBase(0, datas...)
+			convey.So(res, convey.ShouldEqual, 100)
+		})
+		convey.Convey("CountBase batch 0 total 99", func() {
+			datas := []int64{}
+			for i := 0; i < 99; i++ {
+				datas = append(datas, int64(i))
+			}
+			res := CountBase(0, datas...)
+			convey.So(res, convey.ShouldEqual, 99)
+		})
+		convey.Convey("CountBase batch 1 total 10000", func() {
+			datas := []int64{}
+			for i := 0; i < 10000; i++ {
+				datas = append(datas, int64(i))
+			}
+			res := CountBase(1, datas...)
+			convey.So(res, convey.ShouldEqual, 1000)
+		})
+		convey.Convey("CountBase batch 1 total 99", func() {
+			datas := []int64{}
+			for i := 0; i < 99; i++ {
+				datas = append(datas, int64(i))
+			}
+			res := CountBase(1, datas...)
+			convey.So(res, convey.ShouldEqual, 99)
+		})
+		convey.Convey("CountBase batch 3 total 1000", func() {
+			datas := []int64{}
+			for i := 0; i < 1000; i++ {
+				datas = append(datas, int64(i))
+			}
+			res := CountBase(3, datas...)
+			convey.So(res, convey.ShouldEqual, 334)
+		})
+		convey.Convey("CountBase batch 3 total 99", func() {
+			datas := []int64{}
+			for i := 0; i < 99; i++ {
+				datas = append(datas, int64(i))
+			}
+			res := CountBase(3, datas...)
+			convey.So(res, convey.ShouldEqual, 99)
+		})
+	})
+}
+
 // TestGroup
 func TestGroup(t *testing.T) {
 	convey.Convey("TestGroup", t, func() {
@@ -33,11 +86,11 @@ func TestGroup(t *testing.T) {
 			count = int(total)/batch + 1
 		}
 		convey.Convey("GroupCount", func() {
-			res := Count[demo](batch, demos...)
+			res := Count(batch, demos...)
 			convey.So(res, convey.ShouldEqual, count)
 		})
 		convey.Convey("Group", func() {
-			res := Group[demo](batch, demos...)
+			res := Group(batch, demos...)
 			for gId, g := range res {
 				for iId, i := range g {
 					d := demos[batch*gId+iId]
