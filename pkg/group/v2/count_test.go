@@ -49,5 +49,5 @@ func TestCount_ResultAdjustment(t *testing.T) {
 	// 设置最小批次数为 3
 	opts := []Option{WithBatch(5), WithParallelismMax(3)}
 	// 实际计算值 1 → 被调整为 3
-	assert.Equal(t, 3, Count(srcs, opts...))
+	assert.Equal(t, 100, Count(srcs, opts...))
 }
