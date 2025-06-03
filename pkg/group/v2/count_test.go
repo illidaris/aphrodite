@@ -29,10 +29,9 @@ func TestCount_NonExactDivision(t *testing.T) {
 
 // TestCount_BatchLargerThanTotal 测试批次大小超过总长度
 func TestCount_BatchLargerThanTotal(t *testing.T) {
-	// 防止验证负提升
 	srcs := make([]int, 5) // 长度 5
 	opts := []Option{WithBatch(10)}
-	assert.Equal(t, 5, Count(srcs, opts...)) // 5/10=0.5
+	assert.Equal(t, 1, Count(srcs, opts...)) // 5/10=0.5
 }
 
 // TestCount_BatchAutoCorrection 测试批次自动修正逻辑
