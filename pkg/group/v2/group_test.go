@@ -50,6 +50,20 @@ func TestGroup(t *testing.T) {
 				}
 			}
 		})
+		convey.Convey("Group Srcs is empty", func() {
+			res := Group([]int{}, opts...)
+			convey.So(len(res), convey.ShouldEqual, 0)
+		})
+
+		convey.Convey("Group Srcs is 6", func() {
+			res := Group([]int{1, 2, 3, 4, 5, 6}, opts...)
+			convey.So(len(res), convey.ShouldEqual, 2)
+		})
+
+		convey.Convey("Group WithParallelismMax is 1", func() {
+			res := Group([]int{1, 2, 3, 4, 5, 6}, WithBatch(1), WithParallelismMax(1))
+			convey.So(len(res), convey.ShouldEqual, 1)
+		})
 	})
 }
 
@@ -72,6 +86,16 @@ func TestGroupFunc(t *testing.T) {
 		batch := 3
 		total := len(demos)
 		opts := []Option{WithBatch(batch)}
+		convey.Convey("GroupFunc srcs is empty", func() {
+			affect, errM := GroupFunc(func(v ...*demo) (int64, error) {
+				for _, item := range v {
+					println(item.Name)
+				}
+				return int64(len(v)), nil
+			}, []*demo{}, opts...)
+			convey.So(affect, convey.ShouldEqual, 0)
+			convey.So(len(errM), convey.ShouldEqual, 0)
+		})
 		convey.Convey("GroupFunc", func() {
 			affect, errM := GroupFunc(func(v ...*demo) (int64, error) {
 				for _, item := range v {
