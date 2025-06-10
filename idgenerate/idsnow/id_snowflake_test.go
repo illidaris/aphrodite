@@ -12,20 +12,23 @@ func TestNextIdFunc(t *testing.T) {
 		convey.Convey("success", func() {
 			opts := []Option{
 				WithMachineID(func() int {
-					return 32
+					return 111
 				}),
+				WithStartTime(
+					time.Date(2021, 3, 4, 5, 6, 7, 11, time.UTC),
+				),
 			}
 			idGen := NextIdFunc(opts...)
 			for i := 0; i < 10; i++ {
-				id, err := idGen()
+				id, err := idGen(nil)
 				if err != nil {
 					t.Fatalf("failed to generate id: %v", err)
 				}
 				println(DecomposeStr(id, opts...))
 			}
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 1)
 			for i := 0; i < 10; i++ {
-				id, err := idGen()
+				id, err := idGen(int64(i))
 				if err != nil {
 					t.Fatalf("failed to generate id: %v", err)
 				}
@@ -33,7 +36,44 @@ func TestNextIdFunc(t *testing.T) {
 			}
 		})
 	})
+}
 
+func BenchmarkNextIdFunc(b *testing.B) {
+	opts := []Option{
+		WithMachineID(func() int {
+			return 111
+		}),
+	}
+	idGen := NextIdFunc(opts...)
+	for i := 0; i < b.N; i++ {
+		_, err := idGen(i)
+		if err != nil {
+			b.Fatalf("failed to generate id: %v", err)
+		}
+	}
+}
+
+func TestNextIdFuncByDate(t *testing.T) {
+	convey.Convey("TestNextIdFuncByDate", t, func() {
+		convey.Convey("success", func() {
+			opts := []Option{
+				WithMachineID(func() int {
+					return 6
+				}),
+				WithNowFunc(func() time.Time {
+					return time.Date(2025, 6, 10, 6, 7, 5, 0, time.UTC)
+				}),
+			}
+			idGen := NextIdFunc(opts...)
+			for i := 0; i < 10000; i++ {
+				id, err := idGen(i)
+				if err != nil {
+					t.Fatalf("failed to generate id: %v", err)
+				}
+				println(DecomposeStr(id, opts...))
+			}
+		})
+	})
 }
 
 // func TestNew(t *testing.T) {

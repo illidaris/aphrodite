@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-func NextIdFunc(opts ...Option) func() (int64, error) {
+func NextIdFunc(opts ...Option) func(key any) (int64, error) {
 	options := newOptions(opts...) // 配置
 	var (
 		mutex       = new(sync.Mutex)            // 锁
@@ -12,17 +12,17 @@ func NextIdFunc(opts ...Option) func() (int64, error) {
 		machine     int                          // 机器ID
 		sequence    = 1<<options.LenSequence - 1 // 当前序列ID
 		clock       int64
-		gene        int64
 	)
 	if options.MachineID != nil {
 		machine = options.MachineID()
 	}
-	return func() (int64, error) {
+	return func(key any) (int64, error) {
 		maskSequence := 1<<options.LenSequence - 1 // 构建【序列段】
-		mutex.Lock()                               // 加锁
-		defer mutex.Unlock()                       // 解锁
-		current := options.currentElapsedTime()    // 当前偏移时间戳
-		if elapsedTime < current {                 // 当前偏移时间戳 大于 历史偏移时间戳
+		gene := options.GeneFunc(key, 1<<options.LenGene)
+		mutex.Lock()                            // 加锁
+		defer mutex.Unlock()                    // 解锁
+		current := options.currentElapsedTime() // 当前偏移时间戳
+		if elapsedTime < current {              // 当前偏移时间戳 大于 历史偏移时间戳
 			// 1. 进入下一个时间刻度，同时序列号从0开始
 			elapsedTime = current
 			sequence = 0
@@ -42,9 +42,9 @@ func NextIdFunc(opts ...Option) func() (int64, error) {
 		return options.toId(
 				elapsedTime,
 				clock,
-				int64(machine),
 				int64(sequence),
-				gene),
+				int64(machine),
+				int64(gene)),
 			nil
 	}
 }

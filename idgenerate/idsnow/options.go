@@ -1,6 +1,10 @@
 package idsnow
 
-import "time"
+import (
+	"time"
+
+	"github.com/spf13/cast"
+)
 
 type Option func(*options)
 
@@ -63,31 +67,38 @@ func newOptions(opts ...Option) options {
 
 func defOptions() options {
 	opt := options{
-		LenTimeUnix:    defaultBitsTime,
-		LenSequence:    defaultBitsSequence,
-		LenClock:       defaultBitsClock,
-		LenMachineID:   defaultBitsMachine,
-		LenGene:        defaultBitGene,
-		TimeUnit:       defaultTimeUnit,
-		StartTime:      defaultStartTime,
-		NowFunc:        func() time.Time { return time.Now() },
-		MachineID:      nil,
+		LenTimeUnix:  defaultBitsTime,
+		LenSequence:  defaultBitsSequence,
+		LenClock:     defaultBitsClock,
+		LenMachineID: defaultBitsMachine,
+		LenGene:      defaultBitGene,
+		TimeUnit:     defaultTimeUnit,
+		StartTime:    defaultStartTime,
+		NowFunc:      func() time.Time { return time.Now() },
+		MachineID:    nil,
+		GeneFunc: func(key any, m int) int {
+			if key == nil {
+				return 0
+			}
+			return cast.ToInt(key) % m
+		},
 		CheckMachineID: nil,
 	}
 	return opt
 }
 
 type options struct {
-	LenTimeUnix    int              // 长度-时间戳段
-	LenSequence    int              // 长度-序列号段
-	LenClock       int              // 长度-时钟段
-	LenMachineID   int              // 长度-机器ID段
-	LenGene        int              // 长度-基因段
-	TimeUnit       time.Duration    // 时间戳-刻度单位 默认毫秒，不建议修改
-	StartTime      time.Time        // 时间起点-默认2025年1月1日0点0分0秒，不建议修改
-	NowFunc        func() time.Time // 获取当前时间默认使用time.Now()
-	MachineID      func() int       // 改造成实时计算(入参基因1（0~31），基因2（0~3）) 1-默认机器IP组成 2-自定义: NodeId（节点Id） 2^8 FrameId（主备帧数） 2^2 Gene2（基因2位取模） 2^2 Gene（基因4位取模） 2^4
-	CheckMachineID func(int) bool   // 机器ID检查
+	LenTimeUnix    int                // 长度-时间戳段
+	LenSequence    int                // 长度-序列号段
+	LenClock       int                // 长度-时钟段
+	LenMachineID   int                // 长度-机器ID段
+	LenGene        int                // 长度-基因段
+	TimeUnit       time.Duration      // 时间戳-刻度单位 默认毫秒，不建议修改
+	StartTime      time.Time          // 时间起点-默认2025年1月1日0点0分0秒，不建议修改
+	NowFunc        func() time.Time   // 获取当前时间默认使用time.Now()
+	MachineID      func() int         // 改造成实时计算(入参基因1（0~31），基因2（0~3）) 1-默认机器IP组成 2-自定义: NodeId（节点Id） 2^8 FrameId（主备帧数） 2^2 Gene2（基因2位取模） 2^2 Gene（基因4位取模） 2^4
+	GeneFunc       func(any, int) int // 基因取模算法
+	CheckMachineID func(int) bool     // 机器ID检查
 }
 
 func (o *options) LenTotal() int {
@@ -140,47 +151,12 @@ func (o *options) LenHeadSlice() []string {
 	}
 }
 
-func (o *options) Offset(index int) int64 {
-	ss := o.LenSlice()
-	l := len(ss)
-	if l == 0 {
-		return 0
-	}
-	if index > l-1 {
-		return 0
-	}
-	return offsetSum(ss[index:]...)
-}
-
 func (o *options) toId(vals ...int64) int64 {
 	id := int64(0)
-	for _, v := range o.IdPartsFrmVals(vals...) {
+	for _, v := range IdPartsFrmVals(o.LenSlice(), vals...) {
 		id |= v
 	}
 	return id
-}
-func (o *options) IdPartsFrmVals(vals ...int64) []int64 {
-	parts := []int64{}
-	ss := o.LenSlice()
-	for i := 0; i < len(ss); i++ {
-		val := int64(0)
-		if i < len(vals) {
-			val = vals[i]
-		}
-		offset := o.Offset(i + 1)
-		parts = append(parts, val<<offset)
-	}
-	return parts
-}
-func (o *options) GetValsFrmId(id int64) []int64 {
-	vals := []int64{}
-	ss := o.LenSlice()
-	for i := 0; i < len(ss); i++ {
-		offset := o.Offset(i + 1)
-		maskSequence := (int64(1)<<int64(ss[i]) - int64(1)) << offset
-		vals = append(vals, (id&maskSequence)>>offset)
-	}
-	return vals
 }
 
 func (o *options) getUnit() int64 {

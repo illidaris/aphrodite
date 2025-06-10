@@ -12,12 +12,12 @@ func TestOptionsOffset(t *testing.T) {
 		convey.Convey("Success", func() {
 			results := []int64{63, 22, 21, 11, 4}
 			for index, res := range results {
-				v := opt.Offset(index)
+				v := Offset(opt.LenSlice(), index)
 				convey.So(v, convey.ShouldEqual, res)
 			}
 		})
 		convey.Convey("Out Of Range", func() {
-			convey.So(opt.Offset(1000), convey.ShouldEqual, 0)
+			convey.So(Offset(opt.LenSlice(), 1000), convey.ShouldEqual, 0)
 		})
 	})
 }
@@ -26,7 +26,7 @@ func TestOptions(t *testing.T) {
 	convey.Convey("TestOptions", t, func() {
 		opt := newOptions()
 		vals := []int64{1, 1, 3, 4, 5}
-		vs := opt.IdPartsFrmVals(vals...)
+		vs := IdPartsFrmVals(opt.LenSlice(), vals...)
 
 		convey.Convey("IdPartsFrmVals", func() {
 			results := []int64{4194304, 2097152, 6144, 64, 5}
@@ -39,7 +39,7 @@ func TestOptions(t *testing.T) {
 			for _, v := range vs {
 				id |= v
 			}
-			convey.So(opt.GetValsFrmId(id), convey.ShouldEqual, vals)
+			convey.So(GetValsFrmId(opt.LenSlice(), id), convey.ShouldEqual, vals)
 		})
 	})
 }
