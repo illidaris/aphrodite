@@ -75,7 +75,7 @@ func defOptions() options {
 		TimeUnit:     defaultTimeUnit,
 		StartTime:    defaultStartTime,
 		NowFunc:      func() time.Time { return time.Now() },
-		MachineID:    nil,
+		MachineID:    nil, // TODO 默认方案：通过本机IP，在redis list中添加，同时返回机器IP对应的下标
 		GeneFunc: func(key any, m int) int {
 			if key == nil {
 				return 0
@@ -128,6 +128,13 @@ func (o *options) VaildOptions() error {
 	// 限制起点时间
 	if o.StartTime.After(time.Now()) {
 		return ErrStartTimeAhead
+	}
+	// 确认机器Id是否合法
+	if o.MachineID != nil {
+		mid := o.MachineID()
+		if mid < 0 || mid > 1<<o.LenMachineID-1 {
+			return ErrInvalidMachineID
+		}
 	}
 	return nil
 }

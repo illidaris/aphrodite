@@ -35,6 +35,20 @@ func TestNextIdFunc(t *testing.T) {
 				println(DecomposeStr(id, opts...))
 			}
 		})
+		convey.Convey("machine id is error", func() {
+			opts := []Option{
+				WithMachineID(func() int {
+					return 129
+				}),
+				WithStartTime(
+					time.Date(2021, 3, 4, 5, 6, 7, 11, time.UTC),
+				),
+			}
+			idGen := NextIdFunc(opts...)
+			id, err := idGen(1)
+			convey.So(id, convey.ShouldEqual, 0)
+			convey.So(err, convey.ShouldEqual, ErrInvalidMachineID)
+		})
 	})
 }
 

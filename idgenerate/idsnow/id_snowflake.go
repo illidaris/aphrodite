@@ -13,6 +13,10 @@ func NextIdFunc(opts ...Option) func(key any) (int64, error) {
 		sequence    = 1<<options.LenSequence - 1 // 当前序列ID
 		clock       int64
 	)
+	err := options.VaildOptions()
+	if err != nil {
+		return func(key any) (int64, error) { return 0, err }
+	}
 	if options.MachineID != nil {
 		machine = options.MachineID()
 	}
