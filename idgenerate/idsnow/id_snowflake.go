@@ -44,11 +44,11 @@ func NextIdFunc(opts ...Option) func(key any) (int64, error) {
 			return 0, ErrOverTimeLimit
 		}
 		return options.toId(
-				elapsedTime,
-				clock,
-				int64(sequence),
-				int64(machine),
-				int64(gene)),
+				elapsedTime,     // 相对时间戳
+				clock,           // 时钟Id
+				int64(sequence), // 序列Id
+				int64(machine),  // 机器Id
+				int64(gene)),    // 基因Id (由关键Id根据基因位长度取模生成)
 			nil
 	}
 }
