@@ -1,13 +1,5 @@
 package idsnow
 
-import (
-	"time"
-)
-
-var (
-	defTime = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC) // 起始时间
-)
-
 // MachineID: NodeId 2^8 FrameId 2^2 Gene2 2^2 Gene 2^4
 // func (i *IdGenerate) NewItem() {
 // 	for gene := 0; gene < 32; gene++ {
