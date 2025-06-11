@@ -43,7 +43,7 @@ func (i IdRecordRepository) Init() {
 
 }
 
-func (i IdRecordRepository) BlockNextSegment(ctx context.Context, key string, step uint64, tryGenerate func() (*Segment, error)) (uint64, uint64, *Segment, error) {
+func (i IdRecordRepository) BlockNextSegment(ctx context.Context, key string, step int64, tryGenerate func() (*Segment, error)) (int64, int64, *Segment, error) {
 	db := i.BuildFrmOptions(ctx, &IdRecord{}, i.Options...)
 	tx := db.WithContext(ctx).Begin()
 	defer func() {
@@ -86,7 +86,7 @@ func (i IdRecordRepository) BlockNextSegment(ctx context.Context, key string, st
 type IdRecord struct {
 	Key      string `json:"key" gorm:"column:key;type:varchar(32);primaryKey;comment:业务主键"`
 	BizId    int64  `json:"bizId" gorm:"column:bizId;type:bigint;comment:游戏ID"` // game id
-	Value    uint64 `json:"value" gorm:"column:value;type:bigint;default:0;comment:业务当前值"`
+	Value    int64  `json:"value" gorm:"column:value;type:bigint;default:0;comment:业务当前值"`
 	CreateAt int64  `json:"createAt" gorm:"column:createAt;<-:create;autoCreateTime;comment:创建时间"` // 创建时间
 	UpdateAt int64  `json:"updateAt" gorm:"column:updateAt;autoUpdateTime;comment:修改时间"`           // 修改时间
 }

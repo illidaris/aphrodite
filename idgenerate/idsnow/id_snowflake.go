@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-func NextIdFunc(opts ...Option) func(key any) (int64, error) {
+func NextIdFunc(opts ...Option) (func(key any) (int64, error), error) {
 	options := newOptions(opts...) // 配置
 	var (
 		mutex       = new(sync.Mutex)            // 锁
@@ -15,7 +15,7 @@ func NextIdFunc(opts ...Option) func(key any) (int64, error) {
 	)
 	err := options.VaildOptions()
 	if err != nil {
-		return func(key any) (int64, error) { return 0, err }
+		return nil, err
 	}
 	if options.MachineID != nil {
 		machine = options.MachineID()
@@ -27,8 +27,7 @@ func NextIdFunc(opts ...Option) func(key any) (int64, error) {
 		defer mutex.Unlock()                    // 解锁
 		current := options.currentElapsedTime() // 当前偏移时间戳
 		if elapsedTime < current {              // 当前偏移时间戳 大于 历史偏移时间戳
-			// 1. 进入下一个时间刻度，同时序列号从0开始
-			elapsedTime = current
+			elapsedTime = current // 1. 进入下一个时间刻度，同时序列号从0开始
 			sequence = 0
 		} else {
 			// TODO: 处理时间回拨，添加历史时钟
@@ -50,5 +49,5 @@ func NextIdFunc(opts ...Option) func(key any) (int64, error) {
 				int64(machine),  // 机器Id
 				int64(gene)),    // 基因Id (由关键Id根据基因位长度取模生成)
 			nil
-	}
+	}, nil
 }

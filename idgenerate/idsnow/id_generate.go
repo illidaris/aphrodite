@@ -1,37 +1,72 @@
 package idsnow
 
-// MachineID: NodeId 2^8 FrameId 2^2 Gene2 2^2 Gene 2^4
-// func (i *IdGenerate) NewItem() {
-// 	for gene := 0; gene < 32; gene++ {
-// 		for gene2 := 0; gene2 < 4; gene2++ {
-// 			for frm := 0; frm < 4; frm++ {
-// 				sf, err := New(Settings{
-// 					BitsMachineID: 16,
-// 					BitsSequence:  8,
-// 					StartTime:     defTime,
-// 					TimeUnit:      1e7, // nsec, i.e. 10 msec
-// 					MachineID: func() (int, error) {
-// 						return int(uint32(i.NodeId)<<8 |
-// 							uint32(frm)<<2 |
-// 							uint32(gene2)<<2 |
-// 							uint32(gene)), nil
-// 					},
-// 				})
-// 				if err != nil {
-// 					println(err)
-// 				}
-// 				i.SonyflakeMap[uint8(gene)][uint8(frm)] = sf
-// 			}
-// 		}
-// 	}
-// }
+import (
+	"context"
+	"math/rand"
 
-// func (i *IdGenerate) NewIDX(ctx context.Context, key string) uint64 {
+	"github.com/illidaris/aphrodite/idgenerate/dep"
+)
 
-// }
-// func (i *IdGenerate) NewID(ctx context.Context, key string) (uint64, error) {
+var _ = dep.IIDGenerate(&IdGenerate{})
 
-// }
-// func (i *IdGenerate) NewIDIterate(ctx context.Context, iterate func(uint64), key string, opts ...dep.Option) error {
+func NewIdGenerate() *IdGenerate {
+	return &IdGenerate{
+		// Generaters:        generaters,
+		// MchDstManager:     defaultMachineManager,
+		// BackupMachineKeys: getMachineKeysOrInit,
+	}
+}
 
-// }
+type IdGenerate struct {
+	Generaters        []func(key any) (int64, error)
+	MchDstManager     IMachineManager
+	BackupMachineKeys func(ctx context.Context, dir string, num int, register func(string)) ([]string, error)
+}
+
+func (ig *IdGenerate) NewIDX(ctx context.Context, key string) int64 {
+	id, _ := ig.NewID(ctx, key)
+	return id
+}
+func (ig *IdGenerate) NewID(ctx context.Context, key string) (int64, error) {
+	l := len(ig.Generaters)
+	if l == 0 {
+		return 0, ErrHasNoGenerater
+	}
+	index := rand.Intn(l)
+	id, err := ig.Generaters[index](key)
+	return id, err
+}
+func (ig *IdGenerate) NewIDIterate(ctx context.Context, iterate func(int64), key string, opts ...dep.Option) error {
+	panic("no impl")
+}
+
+func (ig *IdGenerate) Run(ctx context.Context, dir string, num int, opts ...Option) error {
+	if dir == "" {
+		dir = "tmp"
+	}
+	if num < 1 || num > 128 {
+		num = 4
+	}
+	mKeys, err := ig.BackupMachineKeys(ctx, dir, num, ig.MchDstManager.Register)
+	if err != nil {
+		return err
+	}
+	machineIdMap := ig.MchDstManager.GetMacgineIds()
+	if ig.Generaters == nil {
+		ig.Generaters = []func(key any) (int64, error){}
+	}
+	for _, mKey := range mKeys {
+		mid, ok := machineIdMap[mKey]
+		if ok {
+			opts = append(opts, WithMachineID(func() int {
+				return mid
+			}))
+			f, err := NextIdFunc(opts...)
+			if err != nil {
+				return err
+			}
+			ig.Generaters = append(ig.Generaters, f)
+		}
+	}
+	return nil
+}

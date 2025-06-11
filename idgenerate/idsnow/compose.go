@@ -52,6 +52,11 @@ func (o *options) Compose(t time.Time, sequence, machineID int) (int64, error) {
 // 	}
 // }
 
+func Decompose(id int64, opts ...Option) []int64 {
+	o := newOptions(opts...)
+	return GetValsFrmId(o.LenSlice(), id)
+}
+
 func DecomposeStr(id int64, opts ...Option) string {
 	o := newOptions(opts...) // 配置
 	vals := GetValsFrmId(o.LenSlice(), id)

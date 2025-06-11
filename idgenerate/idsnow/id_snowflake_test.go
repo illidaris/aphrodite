@@ -18,7 +18,7 @@ func TestNextIdFunc(t *testing.T) {
 					time.Date(2021, 3, 4, 5, 6, 7, 11, time.UTC),
 				),
 			}
-			idGen := NextIdFunc(opts...)
+			idGen, _ := NextIdFunc(opts...)
 			for i := 0; i < 10; i++ {
 				id, err := idGen(nil)
 				if err != nil {
@@ -44,7 +44,7 @@ func TestNextIdFunc(t *testing.T) {
 					time.Date(2021, 3, 4, 5, 6, 7, 11, time.UTC),
 				),
 			}
-			idGen := NextIdFunc(opts...)
+			idGen, _ := NextIdFunc(opts...)
 			id, err := idGen(1)
 			convey.So(id, convey.ShouldEqual, 0)
 			convey.So(err, convey.ShouldEqual, ErrInvalidMachineID)
@@ -58,7 +58,7 @@ func BenchmarkNextIdFunc(b *testing.B) {
 			return 111
 		}),
 	}
-	idGen := NextIdFunc(opts...)
+	idGen, _ := NextIdFunc(opts...)
 	for i := 0; i < b.N; i++ {
 		_, err := idGen(i)
 		if err != nil {
@@ -78,7 +78,7 @@ func TestNextIdFuncByDate(t *testing.T) {
 					return time.Date(2025, 6, 10, 6, 7, 5, 0, time.UTC)
 				}),
 			}
-			idGen := NextIdFunc(opts...)
+			idGen, _ := NextIdFunc(opts...)
 			for i := 0; i < 10000; i++ {
 				id, err := idGen(i)
 				if err != nil {

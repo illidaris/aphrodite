@@ -44,11 +44,11 @@ func parseLuaResult(res interface{}) *Segment {
 		case 0:
 			seg.Code = StatusCode(cast.ToInt32(word))
 		case 1:
-			seg.MinId = cast.ToUint64(word)
+			seg.MinId = cast.ToInt64(word)
 		case 2:
-			seg.MaxId = cast.ToUint64(word)
+			seg.MaxId = cast.ToInt64(word)
 		case 3:
-			seg.Cursor = cast.ToUint64(word)
+			seg.Cursor = cast.ToInt64(word)
 		}
 	}
 	if len(words) < 1 {

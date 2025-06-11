@@ -10,7 +10,7 @@ type Option func(*options)
 
 func WithLenSequence(v int) Option {
 	return func(opts *options) {
-		opts.LenMachineID = v
+		opts.LenSequence = v
 	}
 }
 func WithLenMachineID(v int) Option {
@@ -110,11 +110,11 @@ func (o *options) VaildOptions() error {
 		return ErrTotalLength
 	}
 	// 限制序列长度
-	if o.LenSequence < 0 || o.LenSequence > 30 {
+	if o.LenSequence < 0 || o.LenSequence > 16 {
 		return ErrInvalidBitsSequence
 	}
 	// 限制机器码长度
-	if o.LenMachineID < 0 || o.LenMachineID > 30 {
+	if o.LenMachineID < 0 || o.LenMachineID > 16 {
 		return ErrInvalidBitsMachineID
 	}
 	// 确认时间戳序长度
@@ -150,11 +150,11 @@ func (o *options) LenSlice() []int {
 
 func (o *options) LenHeadSlice() []string {
 	return []string{
-		"时间戳(timestamp)",
-		"时钟位(clock)",    // 时钟位 长度 1
-		"序列位(sequence)", // 序列位 长度 10
-		"机器位(machine)",  // 机器位 长度 7
-		"基因位(gene)",     // 基因位 长度 4
+		"时间戳(timestamp)", // 时间戳 长度 41
+		"时钟位(clock)",     // 时钟位 长度 1
+		"序列位(sequence)",  // 序列位 长度 10
+		"机器位(machine)",   // 机器位 长度 7
+		"基因位(gene)",      // 基因位 长度 4
 	}
 }
 

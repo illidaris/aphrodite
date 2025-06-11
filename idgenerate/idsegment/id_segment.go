@@ -10,12 +10,12 @@ import (
 var _ = dep.IIDGenerate(&IdSegment{})
 
 type IdSegment struct {
-	Batch uint64
+	Batch int64
 	Cache ICache
 	Repo  IRepository
 }
 
-func (i IdSegment) NewIDX(ctx context.Context, key string) uint64 {
+func (i IdSegment) NewIDX(ctx context.Context, key string) int64 {
 	id, err := i.NewID(ctx, key)
 	if err != nil {
 		return 0
@@ -23,7 +23,7 @@ func (i IdSegment) NewIDX(ctx context.Context, key string) uint64 {
 	return id
 }
 
-func (i IdSegment) NewID(ctx context.Context, key string) (uint64, error) {
+func (i IdSegment) NewID(ctx context.Context, key string) (int64, error) {
 	seg, _, err := i.NewSegment(ctx, key)
 	if err != nil {
 		return 0, err
@@ -37,7 +37,7 @@ func (i IdSegment) NewID(ctx context.Context, key string) (uint64, error) {
 	return seg.Cursor, nil
 }
 
-func (i IdSegment) NewIDIterate(ctx context.Context, iterate func(uint64), key string, opts ...dep.Option) error {
+func (i IdSegment) NewIDIterate(ctx context.Context, iterate func(int64), key string, opts ...dep.Option) error {
 	seg, supseg, err := i.NewSegment(ctx, key, opts...)
 	if err != nil {
 		return err
@@ -84,7 +84,7 @@ func (i IdSegment) NewSegment(ctx context.Context, key string, opts ...dep.Optio
 	return seg, nil, nil
 }
 
-func (i IdSegment) GenerateSegment(ctx context.Context, key string, num uint64) (*Segment, error) {
+func (i IdSegment) GenerateSegment(ctx context.Context, key string, num int64) (*Segment, error) {
 	res, err := i.Cache.Eval(ctx, LUASCRIPT_HINCR, []string{key}, num)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func (i IdSegment) GenerateSegment(ctx context.Context, key string, num uint64) 
 	}
 }
 
-func (i IdSegment) ReplGenerate(ctx context.Context, key string, num uint64, tryGenerate func() (*Segment, error)) (*Segment, error) {
+func (i IdSegment) ReplGenerate(ctx context.Context, key string, num int64, tryGenerate func() (*Segment, error)) (*Segment, error) {
 	// 阻塞行锁获取新的号段
 	b, e, res, err := i.Repo.BlockNextSegment(ctx, key, num, tryGenerate)
 	if err != nil {

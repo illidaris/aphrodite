@@ -3,6 +3,7 @@ package idsnow
 import "errors"
 
 var (
+	ErrHasNoGenerater       = errors.New("has no generater")
 	ErrTotalLength          = errors.New("total length must be 63")
 	ErrInvalidBitsTime      = errors.New("bit length for time must be 32 or more")
 	ErrInvalidBitsSequence  = errors.New("invalid bit length for sequence number")

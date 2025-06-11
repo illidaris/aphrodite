@@ -13,6 +13,10 @@ const (
 	defaultBitGene      = 4   // 默认基因长度
 )
 
+const (
+	machineIdsFile = "machine_ids.txt"
+)
+
 var (
 	defaultStartTime = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 )

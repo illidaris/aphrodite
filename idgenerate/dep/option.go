@@ -13,10 +13,10 @@ func NewOptions(opts ...Option) *options {
 }
 
 type options struct {
-	Num uint64
+	Num int64
 }
 
-func WithNum(num uint64) Option {
+func WithNum(num int64) Option {
 	return func(o *options) {
 		o.Num = num
 	}
