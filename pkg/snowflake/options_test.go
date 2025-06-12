@@ -1,4 +1,4 @@
-package idsnow
+package snowflake
 
 import (
 	"testing"

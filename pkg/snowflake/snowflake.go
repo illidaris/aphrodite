@@ -1,4 +1,4 @@
-package idsnow
+package snowflake
 
 import (
 	"sync"
@@ -30,11 +30,12 @@ func NextIdFunc(opts ...Option) (func(key any) (int64, error), error) {
 			elapsedTime = current // 1. 进入下一个时间刻度，同时序列号从0开始
 			sequence = 0
 		} else {
-			// TODO: 处理时间回拨，添加历史时钟
 			sequence = (sequence + 1) & maskSequence
 			if sequence == 0 {
 				elapsedTime++
 				overtime := elapsedTime - current
+				// TODO 等待时候超过一定时间，或者达到一定需求时，启用逻辑时钟, 后续代码中实现 逻辑时钟，原理参考：阿里Butterfly框架
+				// TODO 逻辑时钟: 时间起点为进程开始时间点,序列号从0开始累计，到达限制之后，逻辑时累加一个单位时间，序列总0开始。
 				options.sleep(overtime)
 			}
 		}

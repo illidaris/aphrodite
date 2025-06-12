@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/illidaris/aphrodite/idgenerate/dep"
+	"github.com/illidaris/aphrodite/pkg/snowflake"
 )
 
 var _ = dep.IIDGenerate(&IdGenerate{})
@@ -30,7 +31,7 @@ func (ig *IdGenerate) NewIDX(ctx context.Context, key string) int64 {
 func (ig *IdGenerate) NewID(ctx context.Context, key string) (int64, error) {
 	l := len(ig.Generaters)
 	if l == 0 {
-		return 0, ErrHasNoGenerater
+		return 0, snowflake.ErrHasNoGenerater
 	}
 	index := rand.Intn(l)
 	id, err := ig.Generaters[index](key)
@@ -40,7 +41,7 @@ func (ig *IdGenerate) NewIDIterate(ctx context.Context, iterate func(int64), key
 	panic("no impl")
 }
 
-func (ig *IdGenerate) Run(ctx context.Context, dir string, num int, opts ...Option) error {
+func (ig *IdGenerate) Run(ctx context.Context, dir string, num int, opts ...snowflake.Option) error {
 	if dir == "" {
 		dir = "tmp"
 	}
@@ -58,10 +59,10 @@ func (ig *IdGenerate) Run(ctx context.Context, dir string, num int, opts ...Opti
 	for _, mKey := range mKeys {
 		mid, ok := machineIdMap[mKey]
 		if ok {
-			opts = append(opts, WithMachineID(func() int {
+			opts = append(opts, snowflake.WithMachineID(func() int {
 				return mid
 			}))
-			f, err := NextIdFunc(opts...)
+			f, err := snowflake.NextIdFunc(opts...)
 			if err != nil {
 				return err
 			}

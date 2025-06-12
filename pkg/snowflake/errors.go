@@ -1,4 +1,4 @@
-package idsnow
+package snowflake
 
 import "errors"
 
@@ -11,6 +11,7 @@ var (
 	ErrInvalidTimeUnit      = errors.New("invalid time unit")
 	ErrInvalidSequence      = errors.New("invalid sequence number")
 	ErrInvalidMachineID     = errors.New("invalid machine id")
+	ErrInvalidGene          = errors.New("invalid gene")
 	ErrStartTimeAhead       = errors.New("start time is ahead")
 	ErrOverTimeLimit        = errors.New("over the time limit")
 	ErrNoPrivateAddress     = errors.New("no private ip address")

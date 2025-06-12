@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/illidaris/aphrodite/pkg/snowflake"
 	"github.com/smartystreets/goconvey/convey"
 	"github.com/spf13/cast"
 )
@@ -37,7 +38,7 @@ func TestIdGenerate(t *testing.T) {
 				md := gene % 16
 				id, err := idger.NewID(ctx, cast.ToString(gene))
 				convey.So(err, convey.ShouldBeNil)
-				vals := Decompose(id)
+				vals := snowflake.Decompose(id)
 				convey.So(vals[2], convey.ShouldBeBetweenOrEqual, 0, 1023)
 				convey.So(vals[3], convey.ShouldBeBetween, 3, 8)
 				convey.So(vals[4], convey.ShouldEqual, md)
@@ -65,6 +66,7 @@ func (t *testMachineManager) Register(id string) {
 	t.s = append(t.s, id)
 	t.m[id] = len(t.s) - 1
 }
+
 func (t *testMachineManager) GetMacgineIds() map[string]int {
 	return t.m
 }

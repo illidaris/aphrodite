@@ -1,4 +1,4 @@
-package idsnow
+package snowflake
 
 import (
 	"time"
@@ -156,6 +156,10 @@ func (o *options) LenHeadSlice() []string {
 		"机器位(machine)",   // 机器位 长度 7
 		"基因位(gene)",      // 基因位 长度 4
 	}
+}
+
+func (o *options) ToTime(uxpart int64) time.Time {
+	return time.Unix(0, (o.getStartTimeUnix()+uxpart)*o.getUnit())
 }
 
 func (o *options) toId(vals ...int64) int64 {
