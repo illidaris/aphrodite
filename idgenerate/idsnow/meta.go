@@ -16,7 +16,7 @@ func GetMachineKeysOrInit(ctx context.Context, dir string, num int, register fun
 	}
 	machineIdsFullFile := path.Join(dir, machineIdsFile)
 	_ = backup.DiskLoad(ctx, machineIdsFullFile, &machineKeys)
-	defer backup.DiskSave(ctx, machineIdsFullFile, &machineKeys)
+	defer func() { _ = backup.DiskSave(ctx, machineIdsFullFile, &machineKeys) }()
 	for i := 0; i < num-len(machineKeys); i++ {
 		mKey := uuid.NewString()
 		register(mKey)
