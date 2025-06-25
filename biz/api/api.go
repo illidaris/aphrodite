@@ -17,7 +17,7 @@ func POST[In IRequest, Out any](host, secret string, timeout time.Duration) func
 			return nil, err
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[POST]%v resp is nil", req.GetPath())
+			return nil, fmt.Errorf("[POST]%v resp is nil", req.GetAction())
 		}
 		return r.Response.Data, nil
 	}
@@ -31,7 +31,7 @@ func PUT[In IRequest, Out any](host, secret string, timeout time.Duration) func(
 			return nil, err
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[PUT]%v resp is nil", req.GetPath())
+			return nil, fmt.Errorf("[PUT]%v resp is nil", req.GetAction())
 		}
 		return r.Response.Data, nil
 	}
@@ -45,7 +45,7 @@ func GET[In IRequest, Out any](host, secret string, timeout time.Duration) func(
 			return nil, err
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[GET]%v resp is nil", req.GetPath())
+			return nil, fmt.Errorf("[GET]%v resp is nil", req.GetAction())
 		}
 		return r.Response.Data, nil
 	}
@@ -59,7 +59,7 @@ func DELETE[In IRequest, Out any](host, secret string, timeout time.Duration) fu
 			return nil, err
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[DELETE]%v resp is nil", req.GetPath())
+			return nil, fmt.Errorf("[DELETE]%v resp is nil", req.GetAction())
 		}
 		return r.Response.Data, nil
 	}

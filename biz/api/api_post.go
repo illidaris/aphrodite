@@ -41,7 +41,7 @@ func (r PostBaseAPI[Req, T]) GetResponse() any {
 }
 
 func (r PostBaseAPI[Req, T]) GetAction() string {
-	return r.Request.GetPath()
+	return r.Request.GetAction()
 }
 
 func (r PostBaseAPI[Req, T]) Decode(bs []byte) error {

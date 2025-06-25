@@ -41,7 +41,7 @@ func (r GetBaseAPI[Req, T]) GetResponse() any {
 }
 
 func (r GetBaseAPI[Req, T]) GetAction() string {
-	return r.Request.GetPath()
+	return r.Request.GetAction()
 }
 
 func (r GetBaseAPI[Req, T]) Decode(bs []byte) error {
