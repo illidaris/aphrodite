@@ -75,6 +75,28 @@ func NewRecordPager[T IRow](index, size int64, total int64, records ...T) *Recor
 	return res
 }
 
+type RecordPtrPager[T IRow] struct {
+	Data []*T `json:"data"`
+	Pager
+}
+
+func NewRecordPtrPager[T IRow](index, size int64, total int64, records ...*T) *RecordPtrPager[T] {
+	// 创建一个RecordPager对象
+	res := new(RecordPtrPager[T])
+	// 设置当前页码
+	res.PageIndex = index
+	// 设置每页显示的记录数量
+	res.PageSize = size
+	// 设置总记录数
+	res.TotalRecord = total
+	// 设置记录数据
+	res.Data = records
+	// 调用Paginator方法进行分页处理
+	res.Paginator()
+	// 返回创建的RecordPager对象指针
+	return res
+}
+
 // Deprecate : 后期启用
 type DataPager struct {
 	Data interface{} `json:"data"`

@@ -5,6 +5,25 @@ type ISetPage interface {
 	SetPageIndex(index int64)
 }
 
+type ICondPage interface {
+	IPage
+	ICond
+}
+
+type ICond interface {
+	IDbShardingCond
+	ITbShardingCond
+	GetConds() []any
+}
+
+type IDbShardingCond interface {
+	GetDbShardingKeys() []any
+}
+
+type ITbShardingCond interface {
+	GetTbShardingKeys() []any
+}
+
 // IPage page request
 type IPage interface {
 	GetPageIndex() int64

@@ -38,6 +38,16 @@ type Response struct {
 	Data interface{} `json:"data"`
 }
 
+type TResponse[T any] struct {
+	BaseResponse
+	Data T `json:"data"`
+}
+
+type PtrResponse[T any] struct {
+	BaseResponse
+	Data *T `json:"data"`
+}
+
 // ErrorResponse 函数接收一个错误对象 err，返回一个指向 Response 结构体的指针 res。
 // 该函数用于生成一个错误响应对象，将错误信息赋值给 Response 结构体的 Message 字段，
 // 并将 Code 字段设为 -1。

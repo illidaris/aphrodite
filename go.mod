@@ -21,7 +21,7 @@ require (
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/viper v1.7.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/tuotoo/qrcode v0.0.0-20220425170535-52ccc2bebf5d
 	github.com/xuri/excelize/v2 v2.4.1
 	go.mongodb.org/mongo-driver v1.17.1
@@ -31,7 +31,6 @@ require (
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/gorm v1.25.5
 	gorm.io/plugin/soft_delete v1.2.1
-
 )
 
 require (
