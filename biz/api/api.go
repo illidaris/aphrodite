@@ -24,8 +24,8 @@ func POST[In IRequest, Out any](host, secret string, timeout time.Duration) func
 	}
 }
 
-func FORM[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, error) {
-	return func(ctx context.Context, req In) (*Out, error) {
+func FORM[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, exception.Exception) {
+	return func(ctx context.Context, req In) (*Out, exception.Exception) {
 		r := NewFormAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, timeout)
 		if err != nil {
@@ -38,8 +38,8 @@ func FORM[In IRequest, Out any](host, secret string, timeout time.Duration) func
 	}
 }
 
-func PUT[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, error) {
-	return func(ctx context.Context, req In) (*Out, error) {
+func PUT[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, exception.Exception) {
+	return func(ctx context.Context, req In) (*Out, exception.Exception) {
 		r := NewPutAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, time.Second*5)
 		if err != nil {
@@ -52,8 +52,8 @@ func PUT[In IRequest, Out any](host, secret string, timeout time.Duration) func(
 	}
 }
 
-func GET[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, error) {
-	return func(ctx context.Context, req In) (*Out, error) {
+func GET[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, exception.Exception) {
+	return func(ctx context.Context, req In) (*Out, exception.Exception) {
 		r := NewGetAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, time.Second*5)
 		if err != nil {
@@ -66,8 +66,8 @@ func GET[In IRequest, Out any](host, secret string, timeout time.Duration) func(
 	}
 }
 
-func DELETE[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, error) {
-	return func(ctx context.Context, req In) (*Out, error) {
+func DELETE[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, exception.Exception) {
+	return func(ctx context.Context, req In) (*Out, exception.Exception) {
 		r := NewDeleteAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, time.Second*5)
 		if err != nil {
