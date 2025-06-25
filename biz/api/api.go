@@ -5,21 +5,22 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/illidaris/aphrodite/pkg/exception"
 	restSender "github.com/illidaris/rest/sender"
 	"github.com/illidaris/rest/signature"
 )
 
-func POST[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, error) {
-	return func(ctx context.Context, req In) (*Out, error) {
+func POST[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, exception.Exception) {
+	return func(ctx context.Context, req In) (*Out, exception.Exception) {
 		r := NewPostAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, timeout)
 		if err != nil {
-			return nil, err
+			return nil, exception.ERR_BUSI.Wrap(err)
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[POST]%v resp is nil", req.GetAction())
+			return nil, exception.ERR_BUSI.Wrap(fmt.Errorf("[POST]%v resp is nil", req.GetAction()))
 		}
-		return r.Response.Data, nil
+		return r.Response.Data, r.Response.ToException()
 	}
 }
 
@@ -28,12 +29,12 @@ func FORM[In IRequest, Out any](host, secret string, timeout time.Duration) func
 		r := NewFormAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, timeout)
 		if err != nil {
-			return nil, err
+			return nil, exception.ERR_BUSI.Wrap(err)
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[POST]%v resp is nil", req.GetAction())
+			return nil, exception.ERR_BUSI.Wrap(fmt.Errorf("[POST]%v resp is nil", req.GetAction()))
 		}
-		return r.Response.Data, nil
+		return r.Response.Data, r.Response.ToException()
 	}
 }
 
@@ -42,12 +43,12 @@ func PUT[In IRequest, Out any](host, secret string, timeout time.Duration) func(
 		r := NewPutAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, time.Second*5)
 		if err != nil {
-			return nil, err
+			return nil, exception.ERR_BUSI.Wrap(err)
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[PUT]%v resp is nil", req.GetAction())
+			return nil, exception.ERR_BUSI.Wrap(fmt.Errorf("[PUT]%v resp is nil", req.GetAction()))
 		}
-		return r.Response.Data, nil
+		return r.Response.Data, r.Response.ToException()
 	}
 }
 
@@ -56,12 +57,12 @@ func GET[In IRequest, Out any](host, secret string, timeout time.Duration) func(
 		r := NewGetAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, time.Second*5)
 		if err != nil {
-			return nil, err
+			return nil, exception.ERR_BUSI.Wrap(err)
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[GET]%v resp is nil", req.GetAction())
+			return nil, exception.ERR_BUSI.Wrap(fmt.Errorf("[GET]%v resp is nil", req.GetAction()))
 		}
-		return r.Response.Data, nil
+		return r.Response.Data, r.Response.ToException()
 	}
 }
 
@@ -70,12 +71,12 @@ func DELETE[In IRequest, Out any](host, secret string, timeout time.Duration) fu
 		r := NewDeleteAPI[In, Out](req)
 		err := invoke(ctx, r, host, secret, time.Second*5)
 		if err != nil {
-			return nil, err
+			return nil, exception.ERR_BUSI.Wrap(err)
 		}
 		if r.Response == nil {
-			return nil, fmt.Errorf("[DELETE]%v resp is nil", req.GetAction())
+			return nil, exception.ERR_BUSI.Wrap(fmt.Errorf("[DELETE]%v resp is nil", req.GetAction()))
 		}
-		return r.Response.Data, nil
+		return r.Response.Data, r.Response.ToException()
 	}
 }
 
