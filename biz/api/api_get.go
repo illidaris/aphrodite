@@ -12,7 +12,7 @@ import (
 func NewGetAPI[Req IRequest, T any](param Req) *GetBaseAPI[Req, T] {
 	return &GetBaseAPI[Req, T]{
 		Request:  param,
-		Response: new(dto.PtrResponse[T]),
+		Response: new(dto.TResponse[T]),
 	}
 }
 
@@ -21,7 +21,7 @@ var _ = restSender.IRequest(&GetBaseAPI[IRequest, any]{})
 type GetBaseAPI[Req IRequest, T any] struct {
 	restSender.GETRequest `json:"-"`
 	Request               Req
-	Response              *dto.PtrResponse[T] `json:"-"`
+	Response              *dto.TResponse[T] `json:"-"`
 }
 
 func (r GetBaseAPI[Req, T]) GetUrlQuery() url.Values {
@@ -35,7 +35,7 @@ func (r GetBaseAPI[Req, T]) Encode() ([]byte, error) {
 
 func (r GetBaseAPI[Req, T]) GetResponse() any {
 	if r.Response == nil {
-		return new(dto.PtrResponse[T])
+		return new(dto.TResponse[T])
 	}
 	return r.Response
 }

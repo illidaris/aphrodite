@@ -12,7 +12,7 @@ import (
 func NewPostAPI[Req IRequest, T any](param Req) *PostBaseAPI[Req, T] {
 	return &PostBaseAPI[Req, T]{
 		Request:  param,
-		Response: new(dto.PtrResponse[T]),
+		Response: new(dto.TResponse[T]),
 	}
 }
 
@@ -21,7 +21,7 @@ var _ = restSender.IRequest(&PostBaseAPI[IRequest, any]{})
 type PostBaseAPI[Req IRequest, T any] struct {
 	restSender.JSONRequest `json:"-"`
 	Request                Req
-	Response               *dto.PtrResponse[T] `json:"-"`
+	Response               *dto.TResponse[T] `json:"-"`
 }
 
 func (r PostBaseAPI[Req, T]) GetUrlQuery() url.Values {
@@ -35,7 +35,7 @@ func (r PostBaseAPI[Req, T]) Encode() ([]byte, error) {
 
 func (r PostBaseAPI[Req, T]) GetResponse() any {
 	if r.Response == nil {
-		return new(dto.PtrResponse[T])
+		return new(dto.TResponse[T])
 	}
 	return r.Response
 }
@@ -52,7 +52,7 @@ func (r PostBaseAPI[Req, T]) Decode(bs []byte) error {
 func NewFormAPI[Req IRequest, T any](param Req) *PostBaseAPI[Req, T] {
 	return &PostBaseAPI[Req, T]{
 		Request:  param,
-		Response: new(dto.PtrResponse[T]),
+		Response: new(dto.TResponse[T]),
 	}
 }
 
@@ -79,7 +79,7 @@ func (r FormBaseAPI[Req, T]) Encode() ([]byte, error) {
 
 func (r FormBaseAPI[Req, T]) GetResponse() any {
 	if r.Response == nil {
-		return new(dto.PtrResponse[T])
+		return new(dto.TResponse[T])
 	}
 	return r.Response
 }

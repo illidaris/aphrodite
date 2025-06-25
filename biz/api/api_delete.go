@@ -11,7 +11,7 @@ func NewDeleteAPI[Req IRequest, T any](param Req) *DeleteBaseAPI[Req, T] {
 	return &DeleteBaseAPI[Req, T]{
 		GetBaseAPI: GetBaseAPI[Req, T]{
 			Request:  param,
-			Response: new(dto.PtrResponse[T]),
+			Response: new(dto.TResponse[T]),
 		},
 	}
 }

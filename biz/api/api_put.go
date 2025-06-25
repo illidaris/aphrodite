@@ -11,7 +11,7 @@ func NewPutAPI[Req IRequest, T any](param Req) *PutBaseAPI[Req, T] {
 	return &PutBaseAPI[Req, T]{
 		PostBaseAPI: PostBaseAPI[Req, T]{
 			Request:  param,
-			Response: new(dto.PtrResponse[T]),
+			Response: new(dto.TResponse[T]),
 		},
 	}
 }
