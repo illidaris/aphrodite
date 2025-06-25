@@ -48,3 +48,47 @@ func (r PostBaseAPI[Req, T]) Decode(bs []byte) error {
 	err := json.Unmarshal(bs, r.Response)
 	return err
 }
+
+func NewFormAPI[Req IRequest, T any](param Req) *PostBaseAPI[Req, T] {
+	return &PostBaseAPI[Req, T]{
+		Request:  param,
+		Response: new(dto.PtrResponse[T]),
+	}
+}
+
+var _ = restSender.IRequest(&PostBaseAPI[IRequest, any]{})
+
+type FormBaseAPI[Req IRequest, T any] struct {
+	restSender.FormUrlEncodeRequest `json:"-"`
+	Request                         Req
+	Response                        *dto.PtrResponse[T] `json:"-"`
+	Queries                         url.Values          `json:"-"`
+}
+
+func (r FormBaseAPI[Req, T]) GetUrlQuery() url.Values {
+	return r.Queries
+}
+
+func (r FormBaseAPI[Req, T]) Encode() ([]byte, error) {
+	u, err := query.Values(r.Request)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(u.Encode()), nil
+}
+
+func (r FormBaseAPI[Req, T]) GetResponse() any {
+	if r.Response == nil {
+		return new(dto.PtrResponse[T])
+	}
+	return r.Response
+}
+
+func (r FormBaseAPI[Req, T]) GetAction() string {
+	return r.Request.GetAction()
+}
+
+func (r FormBaseAPI[Req, T]) Decode(bs []byte) error {
+	err := json.Unmarshal(bs, r.Response)
+	return err
+}

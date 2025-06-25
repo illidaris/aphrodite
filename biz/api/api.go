@@ -23,6 +23,20 @@ func POST[In IRequest, Out any](host, secret string, timeout time.Duration) func
 	}
 }
 
+func FORM[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, error) {
+	return func(ctx context.Context, req In) (*Out, error) {
+		r := NewFormAPI[In, Out](req)
+		err := invoke(ctx, r, host, secret, timeout)
+		if err != nil {
+			return nil, err
+		}
+		if r.Response == nil {
+			return nil, fmt.Errorf("[POST]%v resp is nil", req.GetAction())
+		}
+		return r.Response.Data, nil
+	}
+}
+
 func PUT[In IRequest, Out any](host, secret string, timeout time.Duration) func(ctx context.Context, req In) (*Out, error) {
 	return func(ctx context.Context, req In) (*Out, error) {
 		r := NewPutAPI[In, Out](req)
