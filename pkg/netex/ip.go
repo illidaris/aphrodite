@@ -1,7 +1,9 @@
 package netex
 
 import (
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 )
 
@@ -40,4 +42,16 @@ func Lower16BitPrivateIP(interfaceAddrs InterfaceAddrs) (int, error) {
 	}
 
 	return int(ip[2])<<8 + int(ip[3]), nil
+}
+
+func IPv4ToInt(IPv4Addr string) (uint32, error) {
+	ip := net.ParseIP(IPv4Addr)
+	if ip == nil {
+		return 0, fmt.Errorf("invalid IP address: %s", IPv4Addr)
+	}
+	ipv4 := ip.To4()
+	if ipv4 == nil {
+		return 0, fmt.Errorf("not an IPv4 address: %s", IPv4Addr)
+	}
+	return binary.BigEndian.Uint32(ipv4), nil
 }
