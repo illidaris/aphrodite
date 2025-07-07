@@ -6,12 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/illidaris/aphrodite/dto"
-	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/exception"
 )
 
 // GinExHandler 通用调用处理
-func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) (Resp, exception.Exception)) func(c *gin.Context) {
+func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) (Resp, exception.Exception), reqFuncs []func(context.Context, *Req)) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if exec == nil {
@@ -28,8 +27,9 @@ func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) 
 				return
 			}
 		}
-		dependency.BindBizFrmCtx(ctx, request)
-		dependency.BindIPFrmCtx(ctx, request)
+		for _, f := range reqFuncs {
+			f(ctx, request)
+		}
 		res, ex := exec(ctx, request)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
