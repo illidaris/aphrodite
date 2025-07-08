@@ -10,7 +10,7 @@ import (
 )
 
 // GinExHandler 通用调用处理
-func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) (Resp, exception.Exception), reqFuncs []func(context.Context, *Req)) func(c *gin.Context) {
+func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) (Resp, exception.Exception), reqFuncs []func(context.Context, *Req) exception.Exception) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if exec == nil {
@@ -28,7 +28,11 @@ func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) 
 			}
 		}
 		for _, f := range reqFuncs {
-			f(ctx, request)
+			ex := f(ctx, request)
+			if ex != nil {
+				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, ex))
+				return
+			}
 		}
 		res, ex := exec(ctx, request)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
