@@ -13,6 +13,10 @@ type IBizRequest interface {
 	ToUrlQuery() url.Values
 }
 
+type IBindRequest interface {
+	IBiz
+	IIP
+}
 type IBiz interface {
 	SetBiz(int64)
 }
