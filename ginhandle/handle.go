@@ -11,14 +11,14 @@ import (
 )
 
 // BizGinExHandler 通用调用处理
-func BizGinExHandler[Req dependency.IBindRequest, Resp any](request *Req, exec func(context.Context, *Req) (Resp, exception.Exception)) func(c *gin.Context) {
+func BizGinExHandler[Req dependency.IBindRequest, Resp any](request Req, exec func(context.Context, Req) (Resp, exception.Exception)) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if exec == nil {
 			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_BUSI.New("当前业务尚未启用")))
 			return
 		}
-		if request != nil {
+		if any(request) != nil {
 			if err := c.ShouldBind(request); err != nil {
 				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
 				return
@@ -28,8 +28,8 @@ func BizGinExHandler[Req dependency.IBindRequest, Resp any](request *Req, exec f
 				return
 			}
 		}
-		dependency.BindBizFrmCtx(ctx, request)
-		dependency.BindIPFrmCtx(ctx, request)
+		dependency.BizFrmCtx(ctx, request)
+		dependency.IPFrmCtx(ctx, request)
 		res, ex := exec(ctx, request)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
