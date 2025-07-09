@@ -8,6 +8,7 @@ const (
 	ERR_VERIFYCODE                                    // 验证码错误
 	ERR_BUSI                                          // 通用业务操作错误
 	ERR_UNRESPONSE                                    // 没有响应
+	ERR_CAPTCHA                                       // 人机码错误
 )
 
 // 通用错误码
@@ -18,7 +19,7 @@ const (
 	ERR_COMMON_UNAUTH                                 // 登录失效
 	ERR_COMMON_NOPERMISSION                           // 没有权限
 	ERR_COMMON_USER                                   // 操作人错误
-	ERR_COMMON_TIMEOUT                                // 超时
+	ERR_COMMON_TIMEOUT                                // 请求超时
 )
 
 // 验证码错误
@@ -26,6 +27,12 @@ const (
 	ERR_VERIFYCODE_SENDFAIL   = ERR_VERIFYCODE + (iota + 1) // 发送验证码失败
 	ERR_VERIFYCODE_HASSEND                                  // 验证码已经发送过
 	ERR_VERIFYCODE_HASEXPIRED                               // 验证码已经过期
+)
+
+// 人机码错误
+const (
+	ERR_CAPTCHA_FAIL       = ERR_CAPTCHA + (iota + 1) // 人机码错误
+	ERR_CAPTCHA_HASEXPIRED                            // 人机码已经过期
 )
 
 // 业务错误
