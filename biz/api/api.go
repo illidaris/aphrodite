@@ -67,10 +67,9 @@ func DELETE[In IRequest, Out any](host, secret string, timeout time.Duration) fu
 func invoke(ctx context.Context, req restSender.IRequest, host, secret string, timeout time.Duration) error {
 	opts := []restSender.Option{
 		restSender.WithTimeout(timeout),
-		restSender.WithTimeConsume(true),
 		restSender.WithHost(host),
 	}
-	if secret == "" {
+	if secret != "" {
 		opts = append(opts, restSender.WithSignSetMode(signature.SignSetlInURL, secret, signature.Generate))
 	}
 	s := restSender.NewSender(opts...)
