@@ -35,7 +35,11 @@ func (r *BaseRepository[T]) BaseCreate(ctx context.Context, ps []*T, opts ...dep
 		}
 		opt := dependency.NewBaseOption(opts...)
 		finalErr := r.BuildFrmOption(ctx, t, opt, func(colls *mongo.Collection) error {
-			result, err := colls.InsertMany(ctx, args)
+			opts := options.InsertMany()
+			if opt.Ignore {
+				opts.SetOrdered(false)
+			}
+			result, err := colls.InsertMany(ctx, args, opts)
 			if result != nil {
 				count = int64(len(result.InsertedIDs))
 			}
