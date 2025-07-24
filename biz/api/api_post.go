@@ -25,6 +25,10 @@ type PostBaseAPI[Req IRequest, T any] struct {
 }
 
 func (r PostBaseAPI[Req, T]) GetUrlQuery() url.Values {
+	v, ok := any(r.Request).(IGetUrlQuery)
+	if ok {
+		return v.GetUrlQuery()
+	}
 	u, _ := query.Values(r.Request)
 	return u
 }
