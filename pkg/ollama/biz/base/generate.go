@@ -23,7 +23,7 @@ func Generater(raw string) func(context.Context, *Entry, ...Option) error {
 			return client.Generate(ctx, req, options.RawHandle)
 		}
 		respFunc := func(resp api.GenerateResponse) error {
-			entry.Duration = resp.TotalDuration
+			entry.Duration = resp.TotalDuration.Milliseconds()
 			entry.Result = resp.Response
 			if options.Handle == nil {
 				return nil
