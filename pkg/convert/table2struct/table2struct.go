@@ -289,6 +289,10 @@ func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]strin
 		row := []string{}
 		dataType := reflect.TypeOf(dst)
 		dataValue := reflect.ValueOf(dst)
+		if dataType.Kind() == reflect.Pointer {
+			dataType = dataType.Elem()
+			dataValue = dataValue.Elem()
+		}
 		for i := 0; i < dataType.NumField(); i++ {
 			field := dataType.Field(i)
 			tag := field.Tag.Get(option.StructTag)
