@@ -29,6 +29,7 @@ type BaseOption struct {
 	Omits          []string                      `json:"omits"`         // omit fields select omit
 	Conds          []any                         `json:"conds"`         // conds where
 	Page           IPage                         `json:"page"`          // page
+	DeepPage       IDeepPage                     `json:"deepPage"`      // deep page
 	SearchAfter    ISearchAfter                  `json:"searchAfter"`   // search after
 	BatchSize      int64                         `json:"batchSize"`     // exec by batch
 	TableName      string                        `json:"tableName"`     // table name
@@ -117,6 +118,13 @@ func WithConds(vs ...any) BaseOptionFunc {
 func WithPage(v IPage) BaseOptionFunc {
 	return func(o *BaseOption) {
 		o.Page = v
+	}
+}
+
+// WithDeepPage
+func WithDeepPage(v IDeepPage) BaseOptionFunc {
+	return func(o *BaseOption) {
+		o.DeepPage = v
 	}
 }
 

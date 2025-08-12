@@ -38,6 +38,10 @@ type ISearchAfter interface {
 	GetSorts() []ISortField
 }
 
+type IDeepPage interface {
+	GetCursor() any
+	ISortField
+}
 type IPaginator interface {
 	IPage
 	GetTotalRecord() int64

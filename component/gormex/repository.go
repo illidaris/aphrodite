@@ -170,7 +170,7 @@ func (r *BaseRepository[T]) BuildFrmOptions(ctx context.Context, t *T, opts ...d
 
 // Option2Page
 func Option2Page(db *gorm.DB, opt *dependency.BaseOption) *gorm.DB {
-	if opt.Page != nil {
+	if opt.Page != nil { // 普通分页
 		for _, f := range opt.Page.GetSorts() {
 			key, _ := convert.FieldFilter(f.GetField(), convert.FieldFilterLevelDefault)
 			if key == "" {
@@ -182,7 +182,21 @@ func Option2Page(db *gorm.DB, opt *dependency.BaseOption) *gorm.DB {
 			db = db.Order(key)
 		}
 		db = db.Offset(int((opt.Page.GetPageIndex() - 1) * opt.Page.GetPageSize())).Limit(int(opt.Page.GetPageSize()))
-	} else {
+	} else if opt.DeepPage != nil { // 深度分页
+		cursorArgs := []any{opt.DeepPage.GetCursor()}
+		key, _ := convert.FieldFilter(opt.DeepPage.GetField(), convert.FieldFilterLevelDefault)
+		if key == "" {
+			return db
+		}
+		cursorCond := fmt.Sprintf("`%v` > ?", key)
+		if opt.DeepPage.GetIsDesc() {
+			orderfmt := fmt.Sprintf("%s %s", key, "desc")
+			cursorCond := fmt.Sprintf("`%v` < ?", key)
+			db = db.Where(cursorCond, cursorArgs...).Order(orderfmt)
+		} else {
+			db = db.Where(cursorCond, cursorArgs...).Order(key)
+		}
+	} else { // 批量
 		if opt.ReadOnly && opt.BatchSize > 0 {
 			db = db.Limit(int(opt.BatchSize))
 		}
