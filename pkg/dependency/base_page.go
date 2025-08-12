@@ -24,6 +24,14 @@ type ITbShardingCond interface {
 	GetTbShardingKeys() []any
 }
 
+type ISelectFields interface {
+	GetSelects() []string
+}
+
+type IOmitFields interface {
+	GetOmits() []string
+}
+
 // IPage page request
 type IPage interface {
 	GetPageIndex() int64

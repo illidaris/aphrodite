@@ -151,11 +151,11 @@ func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, t *T, opt *depen
 	if opt.Lock {
 		db = db.Clauses(clause.Locking{Strength: "UPDATE"})
 	}
-	if len(opt.Selects) > 0 {
-		db = db.Select(opt.Selects)
+	if selects := FilterFields(opt.Selects...); len(selects) > 0 {
+		db = db.Select(selects)
 	}
-	if len(opt.Omits) > 0 {
-		db = db.Omit(opt.Omits...)
+	if omits := FilterFields(opt.Omits...); len(omits) > 0 {
+		db = db.Omit(omits...)
 	}
 	db = Option2Page(db, opt)
 	return db
@@ -231,4 +231,16 @@ func BaseGroup[T dependency.IEntity](f func(v ...*T) (int64, error), opt *depend
 		return affect, errors.New(errMsg)
 	}
 	return affect, nil
+}
+
+func FilterFields(vs ...string) []string {
+	newSelect := []string{}
+	for _, key := range vs {
+		key, _ := convert.FieldFilter(key, convert.FieldFilterLevelDefault)
+		if key == "" {
+			continue
+		}
+		newSelect = append(newSelect, key)
+	}
+	return newSelect
 }
