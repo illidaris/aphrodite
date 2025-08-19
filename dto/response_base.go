@@ -22,6 +22,7 @@ type IResponse interface {
 
 type BaseResponse struct {
 	Code    int32  `json:"code"`
+	SubCode int32  `json:"subCode"`
 	Message string `json:"message"`
 }
 

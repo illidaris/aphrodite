@@ -45,6 +45,7 @@ var ExtCgyMap = map[string]FileCategory{
 	"mp4":  FileCategoryVideo,
 	"avi":  FileCategoryVideo,
 	"ogg":  FileCategoryVideo,
+	"svga": FileCategoryVideo,
 	"mpeg": FileCategoryAudio,
 	"mp3":  FileCategoryAudio,
 	"aiff": FileCategoryAudio,
