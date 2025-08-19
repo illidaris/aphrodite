@@ -97,6 +97,23 @@ func NewRecordPtrPager[T IRow](index, size int64, total int64, records ...*T) *R
 	return res
 }
 
+// GenericPager 通用分页对象
+type GenericPager[T any] struct {
+	Data    []T            `json:"data"`
+	KValues map[string]any `json:"kValues,omitempty"`
+	Pager
+}
+
+func NewGenericPager[T any](index, size int64, total int64, records ...T) *GenericPager[T] {
+	res := new(GenericPager[T])
+	res.PageIndex = index
+	res.PageSize = size
+	res.TotalRecord = total
+	res.Data = records
+	res.Paginator()
+	return res
+}
+
 // Deprecate : 后期启用
 type DataPager struct {
 	Data interface{} `json:"data"`
