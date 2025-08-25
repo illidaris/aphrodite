@@ -7,14 +7,15 @@ import (
 	"io"
 )
 
+// Deprecated: cipher.NewCTR insteand of cipher.NewCFBEncrypter, cipher.NewCFBDecrypter
 // newOptions 创建一个新的 options 对象，并应用传入的 Option 函数进行配置。
 // opts: 可选的配置函数，用于修改 options 对象的默认值。
 // 返回值: 配置后的 options 对象指针。
 func newOptions(opts ...Option) *options {
 	o := &options{
 		Cipher:    aes.NewCipher,
-		Encrypter: cipher.NewCFBEncrypter,
-		Decrypter: cipher.NewCFBDecrypter,
+		Encrypter: cipher.NewCFBEncrypter, // cipher.NewCTR
+		Decrypter: cipher.NewCFBDecrypter, // cipher.NewCTR
 	}
 	// 应用所有传入的 Option 函数，修改 options 对象的配置
 	for _, opt := range opts {
