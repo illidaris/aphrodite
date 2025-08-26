@@ -30,8 +30,12 @@ func (r BaseResponse) ToException() exception.Exception {
 	if r.Code == 0 {
 		return nil
 	}
-	ex := exception.ExceptionType(r.Code)
-	return ex.New(r.Message)
+	exTp := exception.ExceptionType(r.Code)
+	ex := exTp.New(r.Message)
+	if r.SubCode != 0 {
+		ex = ex.WithSubCode(r.SubCode)
+	}
+	return ex
 }
 
 type Response struct {
@@ -56,6 +60,11 @@ func ErrorResponse(err error) *Response {
 	res := &Response{}
 	res.Code = -1
 	res.Message = err.Error()
+	v, ok := err.(exception.Exception)
+	if ok {
+		res.Code = v.Code()
+		res.SubCode = v.SubCode()
+	}
 	return res
 }
 
@@ -78,6 +87,7 @@ func NewResponse(data interface{}, ex exception.Exception) *Response {
 			BaseResponse: BaseResponse{
 				Code:    ex.Code(),
 				Message: ex.Error(),
+				SubCode: ex.SubCode(),
 			},
 			Data: data,
 		}

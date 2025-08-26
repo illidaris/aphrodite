@@ -7,6 +7,8 @@ import (
 
 type Exception interface {
 	Code() int32
+	SubCode() int32
+	WithSubCode(subCode int32) Exception
 	error
 }
 
@@ -48,13 +50,23 @@ var _ = error(&errorString{})
 var _ = Exception(&errorString{})
 
 type errorString struct {
-	ex  ExceptionType
-	err error
-	s   string
+	ex    ExceptionType
+	subEx int32
+	err   error
+	s     string
 }
 
 func (e *errorString) Code() int32 {
 	return int32(e.ex)
+}
+
+func (e *errorString) SubCode() int32 {
+	return e.subEx
+}
+
+func (e *errorString) WithSubCode(subCode int32) Exception {
+	e.subEx = subCode
+	return e
 }
 
 func (e *errorString) Error() string {
