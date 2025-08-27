@@ -1,15 +1,12 @@
 package gormex
 
 import (
-	"fmt"
-	"sync"
-	"sync/atomic"
+	"errors"
 
+	"github.com/illidaris/aphrodite/component/base"
 	"github.com/illidaris/aphrodite/component/embedded"
 	"github.com/illidaris/aphrodite/pkg/dependency"
-	"github.com/illidaris/aphrodite/pkg/group"
 
-	"github.com/schollz/progressbar/v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -45,84 +42,11 @@ func NewMySqlClient(dsn string, log logger.Interface) (*gorm.DB, error) {
 
 // SyncDbStruct
 func SyncDbStruct(dbShardingKeys [][]any, pos ...dependency.IPo) error {
-	ss := trans2Table(dbShardingKeys, pos...)
-	total := len(ss)
-	batch := 10
-	bar := progressbar.Default(int64(total))
-	errMap := sync.Map{}
-	affect := int32(0)
-	_, _ = group.GroupFunc(func(subss ...*initTable) (int64, error) {
-		for _, s := range subss {
-			db := MySqlComponent.GetWriter(s.Db)
-			if db == nil {
-				continue
-			}
-			err := db.Table(s.Table).AutoMigrate(s.P)
-			if err != nil {
-				errMap.Store(fmt.Sprintf("[%v.%v]", s.Db, s.Table), err.Error())
-			}
-			_ = atomic.AddInt32(&affect, 1)
-			_ = bar.Add(1)
+	return base.SyncDbStruct(func(s *base.InitTable) error {
+		db := MySqlComponent.GetWriter(s.Db)
+		if db == nil {
+			return errors.New("db is nil")
 		}
-		return 0, nil
-	}, batch, ss...)
-	_, _ = fmt.Printf("初始化完成总计初始化[%v/%v]", affect, total)
-	errMap.Range(func(key, value any) bool {
-		fmt.Printf("%v初始化失败：%v\n", key, value)
-		return true
-	})
-	return nil
-}
-
-// initTable  init po table
-type initTable struct {
-	Table string
-	Db    string
-	P     dependency.IPo
-}
-
-// trans2Struct transform po to table
-func trans2Table(dbShardingKeys [][]any, pos ...dependency.IPo) []*initTable {
-	ss := []*initTable{}
-	for _, p := range pos {
-		dbs := shardingDb(p, dbShardingKeys...)
-		for _, db := range dbs {
-			is := shardingTable(p, db)
-			ss = append(ss, is...)
-		}
-	}
-	return ss
-}
-
-// shardingDb sharding db
-func shardingDb(p dependency.IPo, dbShardingKeys ...[]any) []string {
-	dbs := []string{}
-	if sharding, ok := p.(dependency.IDbSharding); ok {
-		for _, dbShardingKey := range dbShardingKeys {
-			db := sharding.DbSharding(dbShardingKey...)
-			dbs = append(dbs, db)
-		}
-	} else {
-		dbs = append(dbs, p.Database())
-	}
-	return dbs
-}
-
-// shardingTable sharding table
-func shardingTable(p dependency.IPo, db string) []*initTable {
-	ss := []*initTable{}
-	if sharding, ok := p.(dependency.ITableSharding); ok {
-		for i := 0; i < int(sharding.TableTotal()); i++ {
-			s := &initTable{
-				Db: db, Table: sharding.TableSharding(i), P: p,
-			}
-			ss = append(ss, s)
-		}
-	} else {
-		s := &initTable{
-			Db: db, Table: p.TableName(), P: p,
-		}
-		ss = append(ss, s)
-	}
-	return ss
+		return db.Table(s.Table).AutoMigrate(s.P)
+	})(dbShardingKeys, pos...)
 }

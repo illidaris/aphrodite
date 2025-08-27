@@ -41,6 +41,9 @@ func TestSyncDbSruct(t *testing.T) {
 				Logger:                                   NewLogger(),
 				DisableForeignKeyConstraintWhenMigrating: true, // 注意 AutoMigrate 会自动创建数据库外键约束，您可以在初始化时禁用此功能
 			})
+			if err != nil {
+				return
+			}
 			MySqlComponent.NewWriter("db", gormDb)
 
 			dberr := SyncDbStruct(nil, &testStruct2Po{})
@@ -64,6 +67,9 @@ func TestSyncDbSruct(t *testing.T) {
 				Logger:                                   NewLogger(),
 				DisableForeignKeyConstraintWhenMigrating: true, // 注意 AutoMigrate 会自动创建数据库外键约束，您可以在初始化时禁用此功能
 			})
+			if err != nil {
+				return
+			}
 			MySqlComponent.NewWriter("db1", gormDb)
 			MySqlComponent.NewWriter("db2", gormDb)
 			dberr := SyncDbStruct([][]any{{"db1"}, {"db2"}}, &testStruct2PoWithSharding{})
