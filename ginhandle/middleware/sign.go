@@ -122,9 +122,7 @@ func WithVers(vers ...string) WebsignOption {
 
 func WithRestOptions(vs ...signature.OptionFunc) WebsignOption {
 	return func(opts *WebsignOptions) {
-		for _, v := range vs {
-			opts.RestOptions = append(opts.RestOptions, v)
-		}
+		opts.RestOptions = append(opts.RestOptions, vs...)
 	}
 }
 
