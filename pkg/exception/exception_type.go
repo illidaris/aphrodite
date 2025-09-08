@@ -4,11 +4,15 @@ type ExceptionType int32
 
 // 通用错误大类
 const (
-	ERR_COMMON     ExceptionType = (iota + 1) * 10000 // 通用错误码
-	ERR_VERIFYCODE                                    // 验证码错误
-	ERR_BUSI                                          // 通用业务操作错误
-	ERR_UNRESPONSE                                    // 没有响应
-	ERR_CAPTCHA                                       // 人机码错误
+	ERR_COMMON       ExceptionType = (iota + 1) * 10000 // 通用错误码
+	ERR_VERIFYCODE                                      // 验证码错误
+	ERR_BUSI                                            // 通用业务操作错误
+	ERR_UNRESPONSE                                      // 没有响应
+	ERR_CAPTCHA                                         // 人机码错误
+	ERR_SIGN_APP                                        // 签名APP不合法
+	ERR_SIGN_VER                                        // 签名版本错误
+	ERR_SIGN_EXPIRED                                    // 签名已过期
+	ERR_SIGN                                            // 签名值错误
 )
 
 // 通用错误码
