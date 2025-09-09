@@ -24,18 +24,18 @@ func WebSignMiddleware(sopts ...WebsignOption) gin.HandlerFunc {
 		if opts.Enable {
 			secret, ok := opts.Secrets[app]
 			if !ok {
-				c.AbortWithStatusJSON(http.StatusBadRequest, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_APP.New("应用访问被拒绝")))
+				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_APP.New("应用访问被拒绝")))
 				return
 			}
 			if !opts.AllowVer(ver) {
-				c.AbortWithStatusJSON(http.StatusBadRequest, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_VER.New("签名版本失效")))
+				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_VER.New("签名版本失效")))
 				return
 			}
 			now := time.Now()
 			beg := now.Add(-1 * opts.Timeout)
 			end := now.Add(opts.Timeout)
 			if ts := cast.ToInt64(tsStr); beg.Unix() > ts || end.Unix() < ts {
-				c.AbortWithStatusJSON(http.StatusBadRequest, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_EXPIRED.New("签名已过期")))
+				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_EXPIRED.New("签名已过期")))
 				return
 			}
 			realOpts := []signature.OptionFunc{
@@ -48,7 +48,7 @@ func WebSignMiddleware(sopts ...WebsignOption) gin.HandlerFunc {
 			realOpts = append(realOpts, opts.RestOptions...)
 			err := signature.VerifySign(c.Request, realOpts...)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusBadRequest, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
 				return
 			}
 		}
