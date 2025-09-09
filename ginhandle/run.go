@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/illidaris/aphrodite/ginhandle/middleware"
+	"github.com/illidaris/logger"
 
-	"github.com/dubbogo/gost/log/logger"
 	"github.com/gin-gonic/gin"
+	_ "go.uber.org/automaxprocs"
 )
 
 func NewGin(routeHandle func(*gin.Engine), mode string) *gin.Engine {
@@ -23,6 +24,10 @@ func NewGin(routeHandle func(*gin.Engine), mode string) *gin.Engine {
 		middleware.RecoverHandler(),
 		middleware.APIMiddleware(),
 	)
+	engine.HEAD("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
+	engine.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
+	engine.GET("/metrics", middleware.PrometheusHandle())
+	engine.Use(middleware.ParamMiddleware())
 	routeHandle(engine)
 	return engine
 }
