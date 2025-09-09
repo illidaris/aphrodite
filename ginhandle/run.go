@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/illidaris/aphrodite/ginhandle/middleware"
+	prometheusEx "github.com/illidaris/aphrodite/ginhandle/middleware/prometheus"
 	"github.com/illidaris/logger"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -24,6 +25,7 @@ type GinHandleOptions struct {
 	ParamMiddlewareOpts []middleware.ParamMiddlewareOption
 	HealthCheck         bool
 	MetricCheck         bool
+	PrometheusConfig    prometheusEx.Config
 }
 
 func WithMode(mode string) GinHandleOption {
@@ -50,6 +52,12 @@ func WithMetricCheck(v bool) GinHandleOption {
 	}
 }
 
+func WithPrometheusConfig(v prometheusEx.Config) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.PrometheusConfig = v
+	}
+}
+
 func WithParamMiddleware(v bool, ps ...middleware.ParamMiddlewareOption) GinHandleOption {
 	return func(opts *GinHandleOptions) {
 		opts.ParamMiddleware = v
@@ -61,11 +69,12 @@ type GinHandleOption func(*GinHandleOptions)
 
 func NewGinHandleOption(opts ...GinHandleOption) *GinHandleOptions {
 	o := &GinHandleOptions{
-		Mode:            gin.ReleaseMode,
-		Collectors:      []prometheus.Collector{},
-		ParamMiddleware: true,
-		HealthCheck:     true,
-		MetricCheck:     true,
+		Mode:             gin.ReleaseMode,
+		Collectors:       []prometheus.Collector{},
+		ParamMiddleware:  true,
+		HealthCheck:      true,
+		MetricCheck:      true,
+		PrometheusConfig: prometheusEx.Config{},
 	}
 	for _, opt := range opts {
 		opt(o)
@@ -90,7 +99,7 @@ func NewGin(opts ...GinHandleOption) *gin.Engine {
 		reg := prometheus.NewRegistry()
 		prometheus.DefaultRegisterer = reg
 		prometheus.DefaultGatherer = reg
-		p := middleware.NewWithConfig(middleware.Config{})
+		p := prometheusEx.NewWithConfig(opt.PrometheusConfig)
 		p.Use(engine)
 	}
 	if opt.ParamMiddleware {
