@@ -87,7 +87,11 @@ func NewGin(opts ...GinHandleOption) *gin.Engine {
 		engine.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
 	}
 	if opt.MetricCheck {
-		engine.GET("/metrics", middleware.PrometheusHandle(opt.Collectors...))
+		reg := prometheus.NewRegistry()
+		prometheus.DefaultRegisterer = reg
+		prometheus.DefaultGatherer = reg
+		p := middleware.NewWithConfig(middleware.Config{})
+		p.Use(engine)
 	}
 	if opt.ParamMiddleware {
 		engine.Use(middleware.ParamMiddleware(opt.ParamMiddlewareOpts...))
