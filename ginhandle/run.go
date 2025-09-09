@@ -11,24 +11,87 @@ import (
 
 	"github.com/illidaris/aphrodite/ginhandle/middleware"
 	"github.com/illidaris/logger"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gin-gonic/gin"
 	_ "go.uber.org/automaxprocs"
 )
 
-func NewGin(routeHandle func(*gin.Engine), mode string) *gin.Engine {
-	gin.SetMode(mode)
+type GinHandleOptions struct {
+	Mode                string
+	Collectors          []prometheus.Collector
+	ParamMiddleware     bool
+	ParamMiddlewareOpts []middleware.ParamMiddlewareOption
+	HealthCheck         bool
+	MetricCheck         bool
+}
+
+func WithMode(mode string) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.Mode = mode
+	}
+}
+
+func WithCollectors(cs ...prometheus.Collector) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.Collectors = append(opts.Collectors, cs...)
+	}
+}
+
+func WithHealthCheck(v bool) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.HealthCheck = v
+	}
+}
+
+func WithMetricCheck(v bool) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.MetricCheck = v
+	}
+}
+
+func WithParamMiddleware(v bool, ps ...middleware.ParamMiddlewareOption) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.ParamMiddleware = v
+		opts.ParamMiddlewareOpts = append(opts.ParamMiddlewareOpts, ps...)
+	}
+}
+
+type GinHandleOption func(*GinHandleOptions)
+
+func NewGinHandleOption(opts ...GinHandleOption) *GinHandleOptions {
+	o := &GinHandleOptions{
+		Mode:            gin.ReleaseMode,
+		Collectors:      []prometheus.Collector{},
+		ParamMiddleware: true,
+		HealthCheck:     true,
+		MetricCheck:     true,
+	}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
+}
+
+func NewGin(opts ...GinHandleOption) *gin.Engine {
+	opt := NewGinHandleOption(opts...)
+	gin.SetMode(opt.Mode)
 	engine := gin.New()
 	engine.Use(
 		middleware.LoggerHandler(),
 		middleware.RecoverHandler(),
 		middleware.APIMiddleware(),
 	)
-	engine.HEAD("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
-	engine.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
-	engine.GET("/metrics", middleware.PrometheusHandle())
-	engine.Use(middleware.ParamMiddleware())
-	routeHandle(engine)
+	if opt.HealthCheck {
+		engine.HEAD("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
+		engine.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
+	}
+	if opt.MetricCheck {
+		engine.GET("/metrics", middleware.PrometheusHandle(opt.Collectors...))
+	}
+	if opt.ParamMiddleware {
+		engine.Use(middleware.ParamMiddleware(opt.ParamMiddlewareOpts...))
+	}
 	return engine
 }
 

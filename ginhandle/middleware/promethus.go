@@ -93,15 +93,14 @@ func NewPrometheusMiddleware(registry prometheus.Registerer, buckets []float64) 
 	}
 }
 
-func PrometheusHandle() gin.HandlerFunc {
+func PrometheusHandle(cs ...prometheus.Collector) gin.HandlerFunc {
 	registry := prometheus.NewRegistry()
-
-	// Add go runtime metrics and process collectors.
-	registry.MustRegister(
+	clrs := []prometheus.Collector{
 		collectors.NewGoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
-	)
-
+	}
+	clrs = append(clrs, cs...)
+	registry.MustRegister(clrs...)
 	return NewPrometheusMiddleware(registry, nil).
 		WrapGinHandler("/metrics", promhttp.HandlerFor(
 			registry,
