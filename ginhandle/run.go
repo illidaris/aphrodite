@@ -18,6 +18,7 @@ import (
 	_ "go.uber.org/automaxprocs"
 )
 
+// GinHandleOptions 运行参数
 type GinHandleOptions struct {
 	Mode                string
 	Collectors          []prometheus.Collector
@@ -26,38 +27,52 @@ type GinHandleOptions struct {
 	HealthCheck         bool
 	MetricCheck         bool
 	PrometheusConfig    prometheusEx.Config
+	GinInnerHandle      func(*gin.Engine)
 }
 
+// Gin模式
 func WithMode(mode string) GinHandleOption {
 	return func(opts *GinHandleOptions) {
 		opts.Mode = mode
 	}
 }
 
-func WithCollectors(cs ...prometheus.Collector) GinHandleOption {
-	return func(opts *GinHandleOptions) {
-		opts.Collectors = append(opts.Collectors, cs...)
-	}
-}
-
+// 启用健康检查
 func WithHealthCheck(v bool) GinHandleOption {
 	return func(opts *GinHandleOptions) {
 		opts.HealthCheck = v
 	}
 }
 
+// 启用指标检查
 func WithMetricCheck(v bool) GinHandleOption {
 	return func(opts *GinHandleOptions) {
 		opts.MetricCheck = v
 	}
 }
 
+// Prometheus收集器
+func WithCollectors(cs ...prometheus.Collector) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.Collectors = append(opts.Collectors, cs...)
+	}
+}
+
+// 启用 prometheus
 func WithPrometheusConfig(v prometheusEx.Config) GinHandleOption {
 	return func(opts *GinHandleOptions) {
 		opts.PrometheusConfig = v
 	}
 }
 
+// 内置 handle
+func WithGinInnerHandle(f func(*gin.Engine)) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.GinInnerHandle = f
+	}
+}
+
+// 参数中间件
 func WithParamMiddleware(v bool, ps ...middleware.ParamMiddlewareOption) GinHandleOption {
 	return func(opts *GinHandleOptions) {
 		opts.ParamMiddleware = v
@@ -82,6 +97,7 @@ func NewGinHandleOption(opts ...GinHandleOption) *GinHandleOptions {
 	return o
 }
 
+// Gin默认初始化
 func NewGin(opts ...GinHandleOption) *gin.Engine {
 	opt := NewGinHandleOption(opts...)
 	gin.SetMode(opt.Mode)
@@ -95,10 +111,16 @@ func NewGin(opts ...GinHandleOption) *gin.Engine {
 		engine.HEAD("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
 		engine.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
 	}
+	if opt.GinInnerHandle != nil {
+		opt.GinInnerHandle(engine)
+	}
 	if opt.MetricCheck {
 		reg := prometheus.NewRegistry()
 		prometheus.DefaultRegisterer = reg
 		prometheus.DefaultGatherer = reg
+		if len(opt.Collectors) > 0 {
+			reg.MustRegister(opt.Collectors...)
+		}
 		p := prometheusEx.NewWithConfig(opt.PrometheusConfig)
 		p.Use(engine)
 	}
