@@ -24,6 +24,7 @@ type BaseResponse struct {
 	Code    int32  `json:"code"`
 	SubCode int32  `json:"subCode"`
 	Message string `json:"message"`
+	Msg     string `json:"msg,omitempty"`
 }
 
 func (r BaseResponse) ToException() exception.Exception {
@@ -31,7 +32,11 @@ func (r BaseResponse) ToException() exception.Exception {
 		return nil
 	}
 	exTp := exception.ExceptionType(r.Code)
-	ex := exTp.New(r.Message)
+	msg := r.Message
+	if r.Msg != "" {
+		msg = r.Msg
+	}
+	ex := exTp.New(msg)
 	if r.SubCode != 0 {
 		ex = ex.WithSubCode(r.SubCode)
 	}
