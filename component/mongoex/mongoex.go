@@ -5,7 +5,9 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/illidaris/aphrodite/component/base"
 	"github.com/illidaris/aphrodite/component/embedded"
+	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/group"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -77,4 +79,28 @@ func GetMongoNameByCtx(ctx context.Context) string {
 		return ""
 	}
 	return c
+}
+
+// SyncDbStruct
+func SyncDbStruct(dbShardingKeys [][]any, pos ...dependency.IPo) error {
+	return base.SyncDbStruct(func(s *base.InitTable) error {
+		db := MongoComponent.GetWriter(s.Db)
+		if db == nil {
+			return errors.New("db is nil")
+		}
+		v, ok := s.P.(IRawIndex)
+		if ok {
+			realDBName, tbOk := MongoNameMap[s.Db]
+			if !tbOk {
+				return errors.New("db name not found")
+			}
+			_, err := db.Database(realDBName).Collection(s.Table).Indexes().CreateMany(context.Background(), v.GetRawIndexes())
+			return err
+		}
+		return nil
+	})(dbShardingKeys, pos...)
+}
+
+type IRawIndex interface {
+	GetRawIndexes() []mongo.IndexModel
 }
