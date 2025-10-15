@@ -235,6 +235,10 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 			if !ok {
 				continue
 			}
+			// 列不够，忽略
+			if colIndex > len(row)-1 {
+				continue
+			}
 			cellValue := row[colIndex]
 			cellValue = option.ValueConvert(tag, cellValue)
 			// 根据字段类型转换并赋值
