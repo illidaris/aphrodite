@@ -1,20 +1,20 @@
 package table2struct
 
-// 包导入
 import (
+	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/cast"
 )
 
-// Deprecated: Table2Objs 代替 Table2Struct将二维字符串数组rows转换为指定dst类型的切片。opts为转换选项。
-func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFunc) (err error) {
+// Table2Obj 将二维字符串数组rows转换为指定dst类型的切片。opts为转换选项。
+func Table2Objs(dst interface{}, rows [][]string, opts ...Table2StructOptionFunc) (err error) {
 	// 初始化转换选项
 	var (
 		option  = newTable2StructOption(opts...)
 		headMap = map[string]int{}
+		header  = []string{}
 	)
 	dataValue := reflect.ValueOf(dst)
 	// 验证dst是否为有效的指针类型和切片类型
@@ -36,6 +36,7 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 					headMap[h] = index
 				}
 			}
+			header = row
 		}
 		// 跳过起始行之前的数据
 		if rowIndex < option.StartRowIndex {
@@ -51,52 +52,39 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 		}
 		// 创建新的结构体实例
 		newData := reflect.New(dataType).Elem()
-		// 遍历结构体字段进行赋值
-		for i := 0; i < dataType.NumField(); i++ {
-			field := dataType.Field(i)
-			tag := field.Tag.Get(option.StructTag)
-			// 如果字段没有指定的标签，则跳过
-			if tag == "" || !option.FieldAllow(tag) {
-				continue
-			}
-			colIndex, ok := headMap[tag]
-			if !ok {
-				continue
-			}
+		for _, v := range header {
 			// 列不够，忽略
+			colIndex := headMap[v]
 			if colIndex > len(row)-1 {
 				continue
 			}
 			cellValue := row[colIndex]
-			cellValue = option.ValueConvert(tag, cellValue)
-			// 根据字段类型转换并赋值
-			switch field.Type.Kind() {
-			case reflect.Bool:
-				v, _ := strconv.ParseBool(cellValue)
-				newData.Field(i).SetBool(v)
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				v, _ := strconv.ParseInt(cellValue, 10, 64)
-				newData.Field(i).SetInt(v)
-			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-				v, _ := strconv.ParseUint(cellValue, 10, 64)
-				newData.Field(i).SetUint(v)
-			case reflect.Float32, reflect.Float64:
-				v, _ := strconv.ParseFloat(cellValue, 64)
-				newData.Field(i).SetFloat(v)
-			case reflect.String:
-				v := cellValue
-				newData.Field(i).SetString(v)
-			default:
-				// 处理特殊类型，如time.Time和time.Duration
-				switch field.Type.String() {
-				case "time.Time":
-					v := cast.ToTime(cellValue)
-					newData.Field(i).Set(reflect.ValueOf(v))
-				case "time.Duration":
-					v := cast.ToDuration(cellValue)
-					newData.Field(i).Set(reflect.ValueOf(v))
+			cellValue = option.ValueConvert(v, cellValue)
+			target := newData
+			fieldNames := strings.Split(v, ".")
+			if !option.Deep && len(fieldNames) > 1 {
+				continue
+			}
+			for i, fieldName := range fieldNames {
+				if fieldName == "" {
+					return fmt.Errorf("field path:%s is invalid", v)
+				}
+				target = target.FieldByName(fieldName)
+				if i == len(fieldNames)-1 {
+					break
+				}
+				if target.Kind() == reflect.Pointer {
+					// If the structure pointer is nil, create it.
+					if target.IsNil() {
+						target.Set(reflect.New(target.Type().Elem()).Elem().Addr())
+					}
+					target = reflect.ValueOf(target.Interface()).Elem()
+				}
+				if target.Kind() != reflect.Struct {
+					return fmt.Errorf("field: %s is not struct", fieldName)
 				}
 			}
+			SetValue(&target, target.Type(), cellValue)
 		}
 		// 将转换后的结构体实例添加到目标切片中
 		if dataTypeKind == reflect.Pointer {
@@ -109,8 +97,7 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 	return
 }
 
-// Deprecated: Objs2Table 代替
-func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]string, [][]string, error) {
+func Objs2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]string, [][]string, error) {
 	var (
 		option  = newTable2StructOption(opts...)
 		annoes  = []string{}
@@ -120,15 +107,15 @@ func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]strin
 	)
 	for rowIndex, dst := range dsts {
 		row := []string{}
-		dataType := reflect.TypeOf(dst)
-		dataValue := reflect.ValueOf(dst)
-		if dataType.Kind() == reflect.Pointer {
-			dataType = dataType.Elem()
-			dataValue = dataValue.Elem()
+		descs, err := Fields(dst, option.Deep, "")
+		if err != nil {
+			return headers, rows, err
 		}
-		for i := 0; i < dataType.NumField(); i++ {
-			field := dataType.Field(i)
-			tag := field.Tag.Get(option.StructTag)
+		for _, desc := range descs {
+			if desc.IsExtend {
+				continue
+			}
+			tag := desc.Id
 			// 没有打标记就跳过
 			if tag == "" || !option.FieldAllow(tag) {
 				continue
@@ -136,13 +123,12 @@ func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]strin
 			if rowIndex == 0 {
 				heads = append(heads, tag)
 			}
-			anno := field.Tag.Get(option.AnnoTag)
+			anno := desc.Tag.Get(option.AnnoTag)
 			if rowIndex == 0 {
 				comment := option.ParseAnno(tag, anno)
 				annoes = append(annoes, comment)
 			}
-			val := dataValue.Field(i).Interface()
-			valStr := option.ValueConvert(tag, cast.ToString(val))
+			valStr := option.ValueConvert(tag, cast.ToString(desc.Val))
 			if option.IgnoreZero && valStr == "0" {
 				valStr = ""
 			}

@@ -9,7 +9,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/illidaris/aphrodite/pkg/convert/table2struct"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/group"
 	"github.com/xuri/excelize/v2"
@@ -76,7 +75,7 @@ func BaseExportToReader[T any](ctx context.Context, inCh <-chan T, opt *ImExOpti
 
 func WriteReader[T any](ctx context.Context, items []any, opt *ImExOption[T]) (io.Reader, error) {
 	allRows := [][]string{}
-	headers, rows, err := table2struct.Struct2Table(items, opt.Table2StructOptions...)
+	headers, rows, err := opt.Struct2Table(items)
 	if err != nil {
 		return nil, err
 	}

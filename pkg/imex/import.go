@@ -8,7 +8,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/illidaris/aphrodite/pkg/convert/table2struct"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -17,43 +16,6 @@ type IImpoert interface {
 	GetFileName() string
 }
 
-func NewImExOption[T any]() *ImExOption[T] {
-	return &ImExOption[T]{
-		Table2StructOptions: make([]table2struct.Table2StructOptionFunc, 0),
-		Iterates:            make([]func(item *T), 0),
-	}
-}
-
-type ImExOption[T any] struct {
-	Table2StructOptions []table2struct.Table2StructOptionFunc
-	Iterates            []func(item *T)
-	ExportName          string
-}
-type ImExOptionFunc[T any] func(opt *ImExOption[T])
-
-func WithTable2StructOptions[T any](fs ...table2struct.Table2StructOptionFunc) ImExOptionFunc[T] {
-	return func(opt *ImExOption[T]) {
-		if opt.Table2StructOptions == nil {
-			opt.Table2StructOptions = make([]table2struct.Table2StructOptionFunc, 0)
-		}
-		opt.Table2StructOptions = append(opt.Table2StructOptions, fs...)
-	}
-}
-
-func WithIterates[T any](fs ...func(*T)) ImExOptionFunc[T] {
-	return func(opt *ImExOption[T]) {
-		if opt.Iterates == nil {
-			opt.Iterates = make([]func(item *T), 0)
-		}
-		opt.Iterates = append(opt.Iterates, fs...)
-	}
-}
-
-func WithExportName[T any](name string) ImExOptionFunc[T] {
-	return func(opt *ImExOption[T]) {
-		opt.ExportName = name
-	}
-}
 func BaseImport[Req IImpoert, Resp any](ctx context.Context, req Req, opts ...ImExOptionFunc[Resp]) ([]*Resp, error) {
 	opt := NewImExOption[Resp]()
 	for _, f := range opts {
@@ -88,7 +50,7 @@ func ParseReader[T any](ctx context.Context, reader io.Reader, filename string, 
 		if err != nil {
 			return result, err
 		}
-		err = table2struct.Table2Struct(&result, rows, opt.Table2StructOptions...)
+		err = opt.Table2Struct(&result, rows)
 		if err != nil {
 			return result, err
 		}
@@ -99,7 +61,7 @@ func ParseReader[T any](ctx context.Context, reader io.Reader, filename string, 
 		if err != nil {
 			return result, err
 		}
-		err = table2struct.Table2Struct(&result, rows, opt.Table2StructOptions...)
+		err = opt.Table2Struct(&result, rows)
 		if err != nil {
 			return result, err
 		}
