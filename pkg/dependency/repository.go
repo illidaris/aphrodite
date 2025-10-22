@@ -31,3 +31,10 @@ type IRepository[T IEntity] interface {
 	BaseQuery(ctx context.Context, opts ...BaseOptionFunc) ([]T, error)
 	BaseQueryWithCount(ctx context.Context, opts ...BaseOptionFunc) ([]T, int64, error)
 }
+
+// IEntityRepository repo
+type IEntityRepository[T IEntity] interface {
+	IRepository[T]
+	EntitiesByIDs(ctx context.Context, ids ...any) ([]T, error)
+	EntityMapByIDs(ctx context.Context, ids ...any) (map[any]T, error)
+}

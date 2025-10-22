@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+var _ = dependency.IEntityRepository[dependency.IEntity](&BaseRepository[dependency.IEntity]{})
 var _ = dependency.IRepository[dependency.IEntity](&BaseRepository[dependency.IEntity]{}) // impl check
 
 type BaseRepository[T dependency.IEntity] struct{} // base repository

@@ -13,6 +13,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var _ = dependency.IEntityRepository[dependency.IEntity](&BaseRepository[dependency.IEntity]{})
+var _ = dependency.IRepository[dependency.IEntity](&BaseRepository[dependency.IEntity]{}) // impl check
+
 type BaseRepository[T dependency.IEntity] struct{} // base repository
 // BaseCreate
 func (r *BaseRepository[T]) BaseCreate(ctx context.Context, ps []*T, opts ...dependency.BaseOptionFunc) (int64, error) {
