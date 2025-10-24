@@ -6,6 +6,7 @@ import "strings"
 type table2StructOption struct {
 	StructTag        string                         // 结构体标签，默认为"json" ， 【新版不支持字段别名】
 	AllowTagFields   []string                       // 允许导入或者导出的标签字段，不设置表示无限制
+	IgnoreTagFields  []string                       // 忽略的字段列表
 	FieldConvertFunc map[string]func(string) string // 字段转换函数，默认为空，不转换
 	IgnoreZero       bool                           // 是否忽略零值，默认为false，不忽略
 	AnnoTag          string                         // 注释标签，默认为"gorm"
@@ -39,6 +40,14 @@ func (o table2StructOption) ParseAnno(tag, anno string) string {
 
 // Allow 过滤字段
 func (o table2StructOption) FieldAllow(field string) bool {
+	// 忽略
+	if len(o.IgnoreTagFields) > 0 {
+		for _, v := range o.IgnoreTagFields {
+			if v == field {
+				return false
+			}
+		}
+	}
 	if len(o.AllowTagFields) == 0 {
 		return true
 	}
@@ -64,6 +73,7 @@ func newTable2StructOption(opts ...Table2StructOptionFunc) table2StructOption {
 	opt := table2StructOption{
 		StructTag:        "json",
 		AllowTagFields:   []string{},
+		IgnoreTagFields:  []string{},
 		FieldConvertFunc: map[string]func(string) string{},
 		AnnoTag:          "gorm",
 		AnnoTagSplit:     ";",
@@ -94,6 +104,13 @@ func WithStructTag(v string) func(opt *table2StructOption) {
 func WithAllowTagFields(vs ...string) func(opt *table2StructOption) {
 	return func(opt *table2StructOption) {
 		opt.AllowTagFields = append(opt.AllowTagFields, vs...)
+	}
+}
+
+// WithIgnoreTagFields 忽略导入或者导出的数据
+func WithIgnoreTagFields(vs ...string) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.IgnoreTagFields = append(opt.IgnoreTagFields, vs...)
 	}
 }
 
