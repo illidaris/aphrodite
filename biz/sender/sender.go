@@ -41,7 +41,7 @@ func SendFunc(opts ...SenderOption) func(context.Context, any) (int64, exception
 
 		//
 
-		return int64(lockDur.Seconds()), false, nil
+		return 0, nil
 	}
 }
 
