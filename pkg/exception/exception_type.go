@@ -28,9 +28,11 @@ const (
 
 // 验证码错误
 const (
-	ERR_VERIFYCODE_SENDFAIL   = ERR_VERIFYCODE + (iota + 1) // 发送验证码失败
-	ERR_VERIFYCODE_HASSEND                                  // 验证码已经发送过
-	ERR_VERIFYCODE_HASEXPIRED                               // 验证码已经过期
+	ERR_VERIFYCODE_SENDFAIL    = ERR_VERIFYCODE + (iota + 1) // 发送验证码失败
+	ERR_VERIFYCODE_HASSEND                                   // 验证码已经发送过
+	ERR_VERIFYCODE_HASEXPIRED                                // 验证码已经过期
+	ERR_VERIFYCODE_SENDLIMIT                                 // 验证码发送达到上限
+	ERR_VERIFYCODE_VERIFYLIMIT                               // 验证码验证达到上限
 )
 
 // 人机码错误
