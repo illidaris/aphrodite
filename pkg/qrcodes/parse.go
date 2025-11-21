@@ -2,9 +2,12 @@ package qrcodes
 
 import (
 	"bytes"
+	"errors"
+	"image"
 	"io"
 
-	qrcodeReader "github.com/tuotoo/qrcode"
+	"github.com/makiuchi-d/gozxing"
+	gozxingQrCode "github.com/makiuchi-d/gozxing/qrcode"
 )
 
 // ParseQrCode 解析二维码原始输入，支持三种输入形式：
@@ -24,12 +27,23 @@ func ParseQrCode(raw string) (string, error) {
 // 返回值: 二维码解析结果字符串，可能返回解码失败错误
 // 注意: 当二维码内容为空时返回空字符串且无错误
 func ReadQRCodeByReader(reader io.Reader) (string, error) {
-	qrmatrix, err := qrcodeReader.Decode(reader)
+	img, _, err := image.Decode(reader)
 	if err != nil {
 		return "", err
 	}
-	if qrmatrix == nil {
-		return "", nil
+	// image转bmp
+	bmp, err := gozxing.NewBinaryBitmapFromImage(img)
+	if err != nil {
+		return "", err
 	}
-	return qrmatrix.Content, nil
+	// 解码
+	qrReader := gozxingQrCode.NewQRCodeReader()
+	result, err := qrReader.Decode(bmp, nil) // Safe for concurrent use
+	if err != nil {
+		return "", err
+	}
+	if result == nil {
+		return "", errors.New("decode result is nil")
+	}
+	return result.GetText(), nil
 }
