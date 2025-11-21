@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	acContextex "github.com/illidaris/aphrodite/pkg/contextex"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/exception"
+	"github.com/illidaris/core"
 	"github.com/spf13/cast"
 )
 
@@ -39,10 +41,11 @@ func NewShellOptions(cache dependency.ICache, request dependency.ICacheShellKey,
 
 // ShellOptions defines configuration options for shell operations.
 type ShellOptions struct {
-	cache dependency.ICache // Cache instance
-	key   string            // Cache key
-	dur   time.Duration     // Cache expiration duration
-	skip  bool              // Whether to skip caching
+	cache      dependency.ICache                     // Cache instance
+	key        string                                // Cache key
+	dur        time.Duration                         // Cache expiration duration
+	skip       bool                                  // Whether to skip caching
+	newCtxFUnc func(context.Context) context.Context // ctx
 }
 
 // WithCache provides an option to customize the cache instance.
@@ -77,6 +80,22 @@ func WithSkip(skip bool) ShellOptionFunc {
 	}
 }
 
+func WithNoCtxCancel(v func(context.Context) context.Context) ShellOptionFunc {
+	return func(option *ShellOptions) {
+		option.newCtxFUnc = v
+		// 默认
+		if option.newCtxFUnc == nil {
+			option.newCtxFUnc = func(src context.Context) context.Context {
+				newCtx := context.Background()
+				newCtx = context.WithValue(newCtx, core.SessionID, core.SessionID.Get(src))
+				newCtx = context.WithValue(newCtx, core.TraceID, core.TraceID.Get(src))
+				newCtx = acContextex.WithBizId(newCtx, acContextex.GetBizId(src))
+				return newCtx
+			}
+		}
+	}
+}
+
 // ShellClear clears the specified cache key and its lock identifier.
 // @param cache The cache instance to perform cache operations.
 // @param request The cache key request interface to get the cache key.
@@ -95,16 +114,30 @@ func ShellClear(request dependency.ICacheShellKey, opts ...ShellOptionFunc) exce
 	return nil
 }
 
+func ShellTTL(request dependency.ICacheShellKey, opts ...ShellOptionFunc) time.Duration {
+	option := NewShellOptions(nil, request, opts...)
+	if option.cache == nil {
+		return time.Duration(0)
+	}
+	keyLocked := option.key + KEY_LOCK_SUFFIX
+	dur := option.cache.TTL(keyLocked)
+	return dur
+}
+
 // Shell is a generic function that executes caching logic.
 // @param ctx The context for logging and cancellation purposes.
 // @param request The cache key request interface to get the cache key.
 // @param f A function executed when cache is missed or unavailable, generating the result.
 // @param opts One or more ShellOptionFuncs to further configure the Shell options.
 // @return Returns the result of function f and a possible exception.
-func Shell[T any](ctx context.Context, request dependency.ICacheShellKey, f func() (T, exception.Exception), opts ...ShellOptionFunc) (T, exception.Exception) {
+func Shell[T any](rawCtx context.Context, request dependency.ICacheShellKey, f func() (T, exception.Exception), opts ...ShellOptionFunc) (T, exception.Exception) {
 	option := NewShellOptions(nil, request, opts...)
 	if option.cache == nil || option.skip {
 		return f()
+	}
+	ctx := rawCtx
+	if option.newCtxFUnc != nil {
+		ctx = option.newCtxFUnc(rawCtx)
 	}
 	key := option.key
 	dur := option.dur
