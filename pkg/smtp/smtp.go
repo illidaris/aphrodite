@@ -17,7 +17,7 @@ func TencentSendToMailFunc(identity, user, password string, host string, port in
 		if option.From == "" {
 			option.From = user
 		}
-		if len(option.Targets()) > 0 {
+		if len(option.To) > 1 {
 			return errors.New("腾讯云邮件推送暂不支持多目标")
 		}
 		return SendMailWithTLS(fmt.Sprintf("%s:%d", host, port), auth, user, option.Targets(), []byte(option.Encode()))
