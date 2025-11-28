@@ -9,29 +9,46 @@ import (
 	"github.com/illidaris/aphrodite/pkg/exception"
 )
 
-func PagingListFunc[T dependency.IEntity, K dto.IRow](repo dependency.IRepository[T], iterater func(T) *K) func(ctx context.Context, req dependency.ICondPage) (*dto.RecordPtrPager[K], exception.Exception) {
+type Option func(*Options)
+type Options struct {
+	RepoOptions []dependency.BaseOptionFunc
+}
+
+func WithRepoOptins(vs ...dependency.BaseOptionFunc) Option {
+	return func(o *Options) {
+		o.RepoOptions = append(o.RepoOptions, vs...)
+	}
+}
+
+func PagingListFunc[T dependency.IEntity, K dto.IRow](repo dependency.IRepository[T], iterater func(T) *K, opts ...Option) func(ctx context.Context, req dependency.ICondPage) (*dto.RecordPtrPager[K], exception.Exception) {
 	return func(ctx context.Context, req dependency.ICondPage) (*dto.RecordPtrPager[K], exception.Exception) {
+		option := &Options{
+			RepoOptions: []dependency.BaseOptionFunc{
+				dependency.WithPage(req),
+				dependency.WithReadOnly(true),
+			},
+		}
+
+		if keys := req.GetDbShardingKeys(); len(keys) > 0 {
+			option.RepoOptions = append(option.RepoOptions, dependency.WithDbShardingKey(keys...))
+		}
+		if keys := req.GetTbShardingKeys(); len(keys) > 0 {
+			option.RepoOptions = append(option.RepoOptions, dependency.WithTbShardingKey(keys...))
+		}
+		if keys := req.GetConds(); len(keys) > 0 {
+			option.RepoOptions = append(option.RepoOptions, dependency.WithConds(keys...))
+		}
+
+		for _, opt := range opts {
+			opt(option)
+		}
+
 		result := new(dto.RecordPtrPager[K])
 		result.PageIndex = req.GetPageIndex()
 		result.PageSize = req.GetPageSize()
 		result.Data = make([]*K, 0)
 
-		opts := []dependency.BaseOptionFunc{}
-		if keys := req.GetDbShardingKeys(); len(keys) > 0 {
-			opts = append(opts, dependency.WithDbShardingKey(keys...))
-		}
-		if keys := req.GetTbShardingKeys(); len(keys) > 0 {
-			opts = append(opts, dependency.WithTbShardingKey(keys...))
-		}
-		if keys := req.GetConds(); len(keys) > 0 {
-			opts = append(opts, dependency.WithConds(keys...))
-		}
-		opts = append(opts,
-			dependency.WithPage(req),
-			dependency.WithReadOnly(true),
-		)
-
-		ps, total, err := repo.BaseQueryWithCount(ctx, opts...)
+		ps, total, err := repo.BaseQueryWithCount(ctx, option.RepoOptions...)
 		if err != nil {
 			return result, exception.ERR_BUSI.Wrap(err)
 		}
@@ -46,10 +63,10 @@ func PagingListFunc[T dependency.IEntity, K dto.IRow](repo dependency.IRepositor
 	}
 }
 
-func ListFunc[T dependency.IEntity, K dto.IRow](repo dependency.IRepository[T], iterater func(T) *K) func(ctx context.Context, req dependency.ICond) ([]*K, exception.Exception) {
-	f := EntitiesFunc(repo)
+func ListFunc[T dependency.IEntity, K dto.IRow](repo dependency.IRepository[T], iterater func(T) *K, opts ...Option) func(ctx context.Context, req dependency.ICond) ([]*K, exception.Exception) {
 	return func(ctx context.Context, req dependency.ICond) ([]*K, exception.Exception) {
 		result := []*K{}
+		f := EntitiesFunc(repo, opts...)
 		ps, ex := f(ctx, req.GetDbShardingKeys(), req.GetTbShardingKeys(), req.GetConds()...)
 		if ex != nil {
 			return result, ex
@@ -61,10 +78,10 @@ func ListFunc[T dependency.IEntity, K dto.IRow](repo dependency.IRepository[T], 
 	}
 }
 
-func IDMapFunc[T dependency.IEntity](repo dependency.IRepository[T]) func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) (map[any]*T, exception.Exception) {
-	f := EntitiesFunc(repo)
+func IDMapFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) (map[any]*T, exception.Exception) {
 	return func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) (map[any]*T, exception.Exception) {
 		result := map[any]*T{}
+		f := EntitiesFunc(repo, opts...)
 		ps, ex := f(ctx, dbKeys, tbKeys, conds...)
 		if ex != nil {
 			return result, ex
@@ -76,22 +93,29 @@ func IDMapFunc[T dependency.IEntity](repo dependency.IRepository[T]) func(ctx co
 	}
 }
 
-func EntitiesFunc[T dependency.IEntity](repo dependency.IRepository[T]) func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) ([]T, exception.Exception) {
+func EntitiesFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) ([]T, exception.Exception) {
 	return func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) ([]T, exception.Exception) {
-		opts := []dependency.BaseOptionFunc{}
+		option := &Options{
+			RepoOptions: []dependency.BaseOptionFunc{
+				dependency.WithReadOnly(true),
+			},
+		}
+
 		if len(dbKeys) > 0 {
-			opts = append(opts, dependency.WithDbShardingKey(dbKeys...))
+			option.RepoOptions = append(option.RepoOptions, dependency.WithDbShardingKey(dbKeys...))
 		}
 		if len(tbKeys) > 0 {
-			opts = append(opts, dependency.WithTbShardingKey(tbKeys...))
+			option.RepoOptions = append(option.RepoOptions, dependency.WithTbShardingKey(tbKeys...))
 		}
 		if len(conds) > 0 {
-			opts = append(opts, dependency.WithConds(conds...))
+			option.RepoOptions = append(option.RepoOptions, dependency.WithConds(conds...))
 		}
-		opts = append(opts,
-			dependency.WithReadOnly(true),
-		)
-		ps, err := repo.BaseQuery(ctx, opts...)
+
+		for _, opt := range opts {
+			opt(option)
+		}
+
+		ps, err := repo.BaseQuery(ctx, option.RepoOptions...)
 		if err != nil {
 			return nil, exception.ERR_BUSI.Wrap(err)
 		}
@@ -99,27 +123,34 @@ func EntitiesFunc[T dependency.IEntity](repo dependency.IRepository[T]) func(ctx
 	}
 }
 
-func DetailByIdFunc[T dependency.IEntity](repo dependency.IRepository[T]) func(ctx context.Context, dbKeys, tbKeys []any, id any) (*T, exception.Exception) {
-	f := DetailFunc(repo)
+func DetailByIdFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, dbKeys, tbKeys []any, id any) (*T, exception.Exception) {
 	return func(ctx context.Context, dbKeys, tbKeys []any, id any) (*T, exception.Exception) {
+		f := DetailFunc(repo, opts...)
 		return f(ctx, dbKeys, tbKeys, "`id` = ?", id)
 	}
 }
 
-func DetailFunc[T dependency.IEntity](repo dependency.IRepository[T]) func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) (*T, exception.Exception) {
+func DetailFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) (*T, exception.Exception) {
 	return func(ctx context.Context, dbKeys, tbKeys []any, conds ...any) (*T, exception.Exception) {
-		opts := []dependency.BaseOptionFunc{}
+		option := &Options{
+			RepoOptions: []dependency.BaseOptionFunc{
+				dependency.WithReadOnly(true),
+			},
+		}
+
 		if len(dbKeys) > 0 {
-			opts = append(opts, dependency.WithDbShardingKey(dbKeys...))
+			option.RepoOptions = append(option.RepoOptions, dependency.WithDbShardingKey(dbKeys...))
 		}
 		if len(tbKeys) > 0 {
-			opts = append(opts, dependency.WithTbShardingKey(tbKeys...))
+			option.RepoOptions = append(option.RepoOptions, dependency.WithTbShardingKey(tbKeys...))
 		}
-		opts = append(opts, dependency.WithConds(conds...))
-		opts = append(opts,
-			dependency.WithReadOnly(true),
-		)
-		p, err := repo.BaseGet(ctx, opts...)
+		option.RepoOptions = append(option.RepoOptions, dependency.WithConds(conds...))
+
+		for _, opt := range opts {
+			opt(option)
+		}
+
+		p, err := repo.BaseGet(ctx, option.RepoOptions...)
 		if err != nil {
 			return p, exception.ERR_BUSI_NOFOUND.Wrap(err)
 		}
