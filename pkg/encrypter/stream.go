@@ -85,11 +85,12 @@ func EncryptStream(in io.Reader, out io.Writer, secret []byte, opts ...Option) e
 	}
 	// 创建加密流
 	stream := o.Encrypter(block, iv)
-	writer := &cipher.StreamWriter{S: stream, W: out}
+	writer := cipher.StreamWriter{S: stream, W: out}
 	// 将输入流的数据加密并写入输出流
 	if _, err := io.Copy(writer, in); err != nil {
 		return err
 	}
+	defer writer.Close()
 	return nil
 }
 
@@ -114,7 +115,7 @@ func DecryptStream(in io.Reader, out io.Writer, secret []byte, opts ...Option) e
 	}
 	// 创建解密流
 	stream := o.Decrypter(block, iv)
-	reader := &cipher.StreamReader{S: stream, R: in}
+	reader := cipher.StreamReader{S: stream, R: in}
 	// 将输入流的数据解密并写入输出流
 	if _, err := io.Copy(out, reader); err != nil {
 		return err
