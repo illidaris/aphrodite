@@ -29,6 +29,9 @@ require (
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.10.0
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.7
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/kms v1.3.7
+	github.com/tjfoc/gmsm v1.4.1
 	github.com/xuri/excelize/v2 v2.4.1
 	go.mongodb.org/mongo-driver v1.17.1
 	go.uber.org/automaxprocs v1.6.0
