@@ -1,22 +1,10 @@
 package encrypter
 
 import (
-	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"io"
 )
-
-type IKms interface {
-	Encrypt(val []byte, opts ...KmsOption) ([]byte, error)
-	EncryptCtx(ctx context.Context, val []byte, opts ...KmsOption) ([]byte, error)
-	Decrypt(val []byte, opts ...KmsOption) ([]byte, error)
-	DecryptCtx(ctx context.Context, val []byte, opts ...KmsOption) ([]byte, error)
-}
-
-type IKmsStore interface {
-	Save(ctx context.Context, key string, val []byte) (int64, error)
-	Get(ctx context.Context, key string) ([]byte, error)
-}
 
 type KmsClientOption func(*KmsClientOptions)
 
@@ -30,12 +18,14 @@ type KmsOption func(*KmsOptions)
 
 func newKmsOptions(opts ...KmsOption) *KmsOptions {
 	options := &KmsOptions{
-		KeySpec: "AES_128",
+		KeySpec: SPEC_KEY_AES_128,
 		AESOption: []Option{
 			WithCipher(aes.NewCipher),
 			WithDecrypter(cipher.NewCTR),
 			WithDecrypter(cipher.NewCTR),
 		},
+		EncryptStreamFunc: EncryptStream,
+		DecryptStreamFunc: DecryptStream,
 	}
 	for _, v := range opts {
 		v(options)
@@ -43,10 +33,13 @@ func newKmsOptions(opts ...KmsOption) *KmsOptions {
 	return options
 }
 
+type Encryptfunc func(in io.Reader, out io.Writer, secret []byte, opts ...Option) error
 type KmsOptions struct {
-	KeyId     string
-	KeySpec   string
-	AESOption []Option
+	KeyId             string
+	KeySpec           string
+	AESOption         []Option
+	DecryptStreamFunc Encryptfunc
+	EncryptStreamFunc Encryptfunc
 }
 
 func WithKeyId(keyId string) KmsOption {
@@ -57,5 +50,17 @@ func WithKeyId(keyId string) KmsOption {
 func WithAESOption(vs ...Option) KmsOption {
 	return func(o *KmsOptions) {
 		o.AESOption = append(o.AESOption, vs...)
+	}
+}
+
+func WithEncryptStreamFunc(v Encryptfunc) KmsOption {
+	return func(o *KmsOptions) {
+		o.EncryptStreamFunc = v
+	}
+}
+
+func WithDecryptStreamFunc(v Encryptfunc) KmsOption {
+	return func(o *KmsOptions) {
+		o.DecryptStreamFunc = v
 	}
 }
