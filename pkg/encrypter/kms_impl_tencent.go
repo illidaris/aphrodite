@@ -54,10 +54,11 @@ func NewKmsTencent(opts ...KmsClientOption) (*KmsTencentClient, error) {
 	return c, nil
 }
 
+var _ = IKms(KmsTencentClient{})
+
 type KmsTencentClient struct {
 	KmsClientOptions
 	client *kms.Client
-	store  IKmsStore
 }
 
 func (c KmsTencentClient) GenerateDEK(ctx context.Context, opts ...KmsOption) error {

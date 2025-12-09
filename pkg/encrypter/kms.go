@@ -10,6 +10,7 @@ const (
 )
 
 type IKms interface {
+	GenerateDEK(ctx context.Context, opts ...KmsOption) error
 	Encrypt(val []byte, opts ...KmsOption) ([]byte, error)
 	EncryptCtx(ctx context.Context, val []byte, opts ...KmsOption) ([]byte, error)
 	Decrypt(val []byte, opts ...KmsOption) ([]byte, error)

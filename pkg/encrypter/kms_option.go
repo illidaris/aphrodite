@@ -12,6 +12,31 @@ type KmsClientOptions struct {
 	Region string
 	AppId  string
 	Secret string
+	store  IKmsStore
+}
+
+func WithKmsClientAppId(v string) KmsClientOption {
+	return func(o *KmsClientOptions) {
+		o.AppId = v
+	}
+}
+
+func WithKmsClientSecret(v string) KmsClientOption {
+	return func(o *KmsClientOptions) {
+		o.Secret = v
+	}
+}
+
+func WithKmsClientRegion(v string) KmsClientOption {
+	return func(o *KmsClientOptions) {
+		o.Region = v
+	}
+}
+
+func WithKmsClientStore(v IKmsStore) KmsClientOption {
+	return func(o *KmsClientOptions) {
+		o.store = v
+	}
 }
 
 type KmsOption func(*KmsOptions)
@@ -42,24 +67,24 @@ type KmsOptions struct {
 	EncryptStreamFunc Encryptfunc
 }
 
-func WithKeyId(keyId string) KmsOption {
+func WithKmsKeyId(keyId string) KmsOption {
 	return func(o *KmsOptions) {
 		o.KeyId = keyId
 	}
 }
-func WithAESOption(vs ...Option) KmsOption {
+func WithKmsAESOption(vs ...Option) KmsOption {
 	return func(o *KmsOptions) {
 		o.AESOption = append(o.AESOption, vs...)
 	}
 }
 
-func WithEncryptStreamFunc(v Encryptfunc) KmsOption {
+func WithKmsEncryptStreamFunc(v Encryptfunc) KmsOption {
 	return func(o *KmsOptions) {
 		o.EncryptStreamFunc = v
 	}
 }
 
-func WithDecryptStreamFunc(v Encryptfunc) KmsOption {
+func WithKmsDecryptStreamFunc(v Encryptfunc) KmsOption {
 	return func(o *KmsOptions) {
 		o.DecryptStreamFunc = v
 	}
