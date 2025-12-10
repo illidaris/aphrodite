@@ -13,6 +13,7 @@ import (
 // 返回值: 配置后的 options 对象指针。
 func newOptions(opts ...Option) *options {
 	o := &options{
+		BlockSize: aes.BlockSize,
 		Cipher:    aes.NewCipher,
 		Encrypter: cipher.NewCFBEncrypter, // cipher.NewCTR
 		Decrypter: cipher.NewCFBDecrypter, // cipher.NewCTR
@@ -26,6 +27,7 @@ func newOptions(opts ...Option) *options {
 
 // options 结构体用于存储加密和解密的配置选项。
 type options struct {
+	BlockSize int                                      // 偏移向量尺寸
 	Cipher    func([]byte) (cipher.Block, error)       // 用于生成加密块的函数
 	Encrypter func(cipher.Block, []byte) cipher.Stream // 用于创建加密流的函数
 	Decrypter func(cipher.Block, []byte) cipher.Stream // 用于创建解密流的函数
@@ -33,6 +35,13 @@ type options struct {
 
 // Option 是一个函数类型，用于修改 options 对象的配置。
 type Option func(*options)
+
+// 偏移向量尺寸 一般固定
+func WithBlockSize(v int) Option {
+	return func(o *options) {
+		o.BlockSize = v
+	}
+}
 
 // WithCipher 返回一个 Option 函数，用于设置 options 中的 Cipher 字段。
 // cipher: 用于生成加密块的函数。
@@ -75,7 +84,7 @@ func EncryptStream(in io.Reader, out io.Writer, secret []byte, opts ...Option) e
 	if err != nil {
 		return err
 	}
-	iv := make([]byte, aes.BlockSize)
+	iv := make([]byte, o.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return err
 	}
@@ -109,7 +118,7 @@ func DecryptStream(in io.Reader, out io.Writer, secret []byte, opts ...Option) e
 		return err
 	}
 	// 读取初始化向量
-	iv := make([]byte, aes.BlockSize)
+	iv := make([]byte, o.BlockSize)
 	if _, err := io.ReadFull(in, iv); err != nil {
 		return err
 	}

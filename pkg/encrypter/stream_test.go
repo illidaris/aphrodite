@@ -54,7 +54,7 @@ func TestEncryptStreamVal(t *testing.T) {
 	}
 	println("RawEn: " + base64.StdEncoding.EncodeToString(enout.Bytes()))
 
-	enStr := "EkG5Po44Q4ti9H48LK7Qkw=="
+	enStr := "5puDA7ZJr/N2dOKQ4Cvaq+mwndD8YivxNw=="
 	bs, _ := base64.StdEncoding.DecodeString(enStr)
 	dein := bytes.NewBuffer(bs)
 	deout := &bytes.Buffer{}
