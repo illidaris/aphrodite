@@ -71,7 +71,6 @@ func (c KmsTencentClient) GenerateDEK(ctx context.Context, opts ...KmsOption) er
 	if len(oldCipherDekBs) > 0 {
 		return errors.New("DEK已经存在")
 	}
-
 	request := kms.NewGenerateDataKeyRequest()
 	request.KeyId = common.StringPtr(option.KeyId)
 	request.KeySpec = common.StringPtr(option.KeySpec)
@@ -81,10 +80,7 @@ func (c KmsTencentClient) GenerateDEK(ctx context.Context, opts ...KmsOption) er
 		return err
 	}
 
-	cipherDekBs, err := base64.StdEncoding.DecodeString(*rsp.Response.CiphertextBlob)
-	if err != nil {
-		return err
-	}
+	cipherDekBs := []byte(*rsp.Response.CiphertextBlob)
 	// 解密本地DEK
 	plainDek, err := c.DecryptDEK(cipherDekBs)
 	if err != nil {
