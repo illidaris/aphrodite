@@ -64,7 +64,7 @@ type KmsTencentClient struct {
 func (c KmsTencentClient) GenerateDEK(ctx context.Context, opts ...KmsOption) error {
 	option := newKmsOptions(opts...)
 
-	oldCipherDekBs, err := c.store.Get(ctx, option.KeyId)
+	oldCipherDekBs, err := c.store.DekGet(ctx, option.KeyId)
 	if err != nil {
 		return err
 	}
@@ -80,9 +80,9 @@ func (c KmsTencentClient) GenerateDEK(ctx context.Context, opts ...KmsOption) er
 		return err
 	}
 
-	cipherDekBs := []byte(*rsp.Response.CiphertextBlob)
+	cipherDek := *rsp.Response.CiphertextBlob
 	// 解密本地DEK
-	plainDek, err := c.DecryptDEK(cipherDekBs)
+	plainDek, err := c.DecryptDEK(cipherDek)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (c KmsTencentClient) GenerateDEK(ctx context.Context, opts ...KmsOption) er
 	if *rsp.Response.Plaintext != base64.StdEncoding.EncodeToString(plainDek) {
 		return fmt.Errorf("%s生成DEK不可用", *rsp.Response.RequestId)
 	}
-	affect, err := c.store.Save(ctx, option.KeyId, cipherDekBs)
+	affect, err := c.store.DekSave(ctx, option.KeyId, cipherDek)
 	if err != nil {
 		return err
 	}
@@ -121,12 +121,12 @@ func (c KmsTencentClient) EncryptCtx(ctx context.Context, val []byte, opts ...Km
 func (c KmsTencentClient) EncryptStream(ctx context.Context, in io.Reader, out io.Writer, opts ...KmsOption) error {
 	option := newKmsOptions(opts...)
 	// 提取数据库中保存的cipherDek
-	cipherDekBs, err := c.store.Get(ctx, option.KeyId)
+	cipherDek, err := c.store.DekGet(ctx, option.KeyId)
 	if err != nil {
 		return err
 	}
 	// 解密本地DEK
-	plainDek, err := c.DecryptDEK(cipherDekBs)
+	plainDek, err := c.DecryptDEK(cipherDek)
 	if err != nil {
 		return err
 	}
@@ -152,12 +152,12 @@ func (c KmsTencentClient) DecryptCtx(ctx context.Context, val []byte, opts ...Km
 func (c KmsTencentClient) DecryptStream(ctx context.Context, in io.Reader, out io.Writer, opts ...KmsOption) error {
 	option := newKmsOptions(opts...)
 	// 提取数据库中保存的cipherDek
-	cipherDekBs, err := c.store.Get(ctx, option.KeyId)
+	cipherDek, err := c.store.DekGet(ctx, option.KeyId)
 	if err != nil {
 		return err
 	}
 	// 解密本地DEK
-	plainDek, err := c.DecryptDEK(cipherDekBs)
+	plainDek, err := c.DecryptDEK(cipherDek)
 	if err != nil {
 		return err
 	}
@@ -170,9 +170,8 @@ func (c KmsTencentClient) DecryptStream(ctx context.Context, in io.Reader, out i
 }
 
 // DecryptDEK 使用KMS解密DEK
-func (c KmsTencentClient) DecryptDEK(cipherDeKBs []byte) ([]byte, error) {
+func (c KmsTencentClient) DecryptDEK(cipherDeK string) ([]byte, error) {
 	request := kms.NewDecryptRequest()
-	cipherDeK := base64.StdEncoding.EncodeToString(cipherDeKBs)
 	request.CiphertextBlob = &cipherDeK
 	rsp, err := c.client.Decrypt(request)
 	if err != nil {
@@ -186,14 +185,13 @@ func (c KmsTencentClient) DecryptDEK(cipherDeKBs []byte) ([]byte, error) {
 }
 
 // DecryptDEK 使用KMS加密DEK
-func (c KmsTencentClient) EncryptDEK(keyId string, plaintext []byte) ([]byte, error) {
+func (c KmsTencentClient) EncryptDEK(keyId string, plaintext []byte) (string, error) {
 	encryptRequest := kms.NewEncryptRequest()
 	encryptRequest.KeyId = common.StringPtr(keyId)
 	encryptRequest.Plaintext = common.StringPtr(base64.StdEncoding.EncodeToString(plaintext))
 	encryptResponse, err := c.client.Encrypt(encryptRequest)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	raw := *encryptResponse.Response.CiphertextBlob
-	return base64.StdEncoding.DecodeString(raw)
+	return *encryptResponse.Response.CiphertextBlob, nil
 }

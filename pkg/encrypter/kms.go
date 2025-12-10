@@ -18,6 +18,6 @@ type IKms interface {
 }
 
 type IKmsStore interface {
-	Save(ctx context.Context, key string, val []byte) (int64, error)
-	Get(ctx context.Context, key string) ([]byte, error)
+	DekSave(ctx context.Context, key string, val string) (int64, error)
+	DekGet(ctx context.Context, key string) (string, error)
 }
