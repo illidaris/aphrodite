@@ -46,7 +46,7 @@ func (i KmsManage) Generate(ctx context.Context, opts ...KmsOption) (*DEKPlainEn
 	if storeAffect == 0 {
 		return nil, errors.New("generate store affect 0")
 	}
-	plain := base64.RawStdEncoding.EncodeToString(plainDekBs)
+	plain := base64.StdEncoding.EncodeToString(plainDekBs)
 	dekPlain := dek.WithPlain(plain)
 	// 落户缓存
 	_, cacheErr := i.cache.DekPlainSave(ctx, dekPlain)

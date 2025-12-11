@@ -87,7 +87,9 @@ func (c KmsTencentClient) DecryptDEK(cipherDeK string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	plainDek, err := base64.StdEncoding.DecodeString(*rsp.Response.Plaintext)
+	plain := *rsp.Response.Plaintext
+	println("明文：", plain) // TODO
+	plainDek, err := base64.StdEncoding.DecodeString(plain)
 	if err != nil {
 		return nil, err
 	}

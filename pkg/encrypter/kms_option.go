@@ -109,6 +109,7 @@ type embeddedCache struct {
 
 func (i embeddedCache) DekPlainSave(ctx context.Context, dek *DEKPlainEntry) (int64, error) {
 	i.m.Store(dek.Id, dek)
+	println("明文：", dek.Plain) // TODO
 	return 1, nil
 }
 func (i embeddedCache) DekPlainGet(ctx context.Context, id string) (*DEKPlainEntry, error) {
