@@ -10,7 +10,7 @@ const (
 	SPEC_KEY_AES_256 = "AES_256"
 )
 
-type IKms interface {
+type IKmsAdapter interface {
 	GenerateDEK(ctx context.Context, keyId, keySpec string) ([]byte, []byte, error)
 	DecryptDEK(cipherDeK string) ([]byte, error)
 	EncryptDEK(keyId string, plaintext []byte) (string, error)

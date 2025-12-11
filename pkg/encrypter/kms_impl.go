@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func NewKmsManage(kms IKms, store IKmsStore, cache IKmsCache) *KmsManage {
+func NewKmsManage(kms IKmsAdapter, store IKmsStore, cache IKmsCache) *KmsManage {
 	if cache == nil {
 		cache = newEmbeddedCache()
 	}
@@ -21,22 +21,23 @@ func NewKmsManage(kms IKms, store IKmsStore, cache IKmsCache) *KmsManage {
 }
 
 type KmsManage struct {
-	core  IKms
+	core  IKmsAdapter
 	store IKmsStore
 	cache IKmsCache
 }
 
 // 生成DEK， kms server 生成 落地 数据库
-func (i KmsManage) Generate(ctx context.Context, id, keyId string) (*DEKPlainEntry, error) {
-	plainDekBs, cipherDekBs, err := i.core.GenerateDEK(ctx, id, keyId)
+func (i KmsManage) Generate(ctx context.Context, opts ...KmsOption) (*DEKPlainEntry, error) {
+	option := newKmsOptions(opts...)
+	dek := &DEKEntry{}
+	dek.Id = option.Id
+	dek.KeyId = option.KeyId
+	dek.CreateAt = time.Now().Unix()
+	plainDekBs, cipherDekBs, err := i.core.GenerateDEK(ctx, option.KeyId, option.KeySpec)
 	if err != nil {
 		return nil, err
 	}
-	dek := &DEKEntry{}
-	dek.Id = id
-	dek.KeyId = keyId
 	dek.Cipher = base64.RawStdEncoding.EncodeToString(cipherDekBs)
-	dek.CreateAt = time.Now().Unix()
 	// 落库
 	storeAffect, storeErr := i.store.DekSave(ctx, dek)
 	if storeErr != nil {

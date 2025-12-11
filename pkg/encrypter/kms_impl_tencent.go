@@ -51,7 +51,7 @@ func NewKmsTencent(opts ...KmsClientOption) (*KmsTencentClient, error) {
 	return c, nil
 }
 
-var _ = IKms(KmsTencentClient{})
+var _ = IKmsAdapter(KmsTencentClient{})
 
 type KmsTencentClient struct {
 	KmsClientOptions
