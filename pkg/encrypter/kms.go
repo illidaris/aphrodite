@@ -5,19 +5,42 @@ import (
 )
 
 const (
+	SECRET_DEF       = "_apsecret_default"
 	SPEC_KEY_AES_128 = "AES_128"
 	SPEC_KEY_AES_256 = "AES_256"
 )
 
 type IKms interface {
-	GenerateDEK(ctx context.Context, opts ...KmsOption) error
-	Encrypt(val []byte, opts ...KmsOption) ([]byte, error)
-	EncryptCtx(ctx context.Context, val []byte, opts ...KmsOption) ([]byte, error)
-	Decrypt(val []byte, opts ...KmsOption) ([]byte, error)
-	DecryptCtx(ctx context.Context, val []byte, opts ...KmsOption) ([]byte, error)
+	GenerateDEK(ctx context.Context, keyId, keySpec string) ([]byte, []byte, error)
+	DecryptDEK(cipherDeK string) ([]byte, error)
+	EncryptDEK(keyId string, plaintext []byte) (string, error)
 }
 
 type IKmsStore interface {
-	DekSave(ctx context.Context, key string, val string) (int64, error)
-	DekGet(ctx context.Context, key string) (string, error)
+	DekSave(ctx context.Context, dek *DEKEntry) (int64, error)
+	DekFind(ctx context.Context, ids ...string) ([]*DEKEntry, error)
+}
+
+type IKmsCache interface {
+	DekPlainSave(ctx context.Context, dek *DEKPlainEntry) (int64, error)
+	DekPlainGet(ctx context.Context, id string) (*DEKPlainEntry, error)
+}
+
+type DEKEntry struct {
+	Id       string `json:"id"`       // id
+	KeyId    string `json:"keyId"`    // key Id
+	Cipher   string `json:"cipher"`   // 加密DEK
+	CreateAt int64  `json:"createAt"` // 生成时间
+}
+
+func (i DEKEntry) WithPlain(v string) *DEKPlainEntry {
+	return &DEKPlainEntry{
+		DEKEntry: i,
+		Plain:    v,
+	}
+}
+
+type DEKPlainEntry struct {
+	DEKEntry
+	Plain string `json:"plain"` // 明文 只能在内存中，不能落地
 }

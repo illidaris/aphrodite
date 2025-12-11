@@ -1,9 +1,13 @@
 package encrypter
 
 import (
-	"crypto/aes"
+	"context"
 	"crypto/cipher"
+	"fmt"
 	"io"
+	"sync"
+
+	"github.com/tjfoc/gmsm/sm4"
 )
 
 type KmsClientOption func(*KmsClientOptions)
@@ -12,7 +16,6 @@ type KmsClientOptions struct {
 	Region string
 	AppId  string
 	Secret string
-	store  IKmsStore
 }
 
 func WithKmsClientAppId(v string) KmsClientOption {
@@ -33,19 +36,15 @@ func WithKmsClientRegion(v string) KmsClientOption {
 	}
 }
 
-func WithKmsClientStore(v IKmsStore) KmsClientOption {
-	return func(o *KmsClientOptions) {
-		o.store = v
-	}
-}
-
 type KmsOption func(*KmsOptions)
 
 func newKmsOptions(opts ...KmsOption) *KmsOptions {
 	options := &KmsOptions{
+		Id:      SECRET_DEF,
 		KeySpec: SPEC_KEY_AES_128,
 		AESOption: []Option{
-			WithCipher(aes.NewCipher),
+			WithCipher(sm4.NewCipher),
+			WithBlockSize(sm4.BlockSize),
 			WithDecrypter(cipher.NewCTR),
 			WithDecrypter(cipher.NewCTR),
 		},
@@ -60,6 +59,7 @@ func newKmsOptions(opts ...KmsOption) *KmsOptions {
 
 type Encryptfunc func(in io.Reader, out io.Writer, secret []byte, opts ...Option) error
 type KmsOptions struct {
+	Id                string
 	KeyId             string
 	KeySpec           string
 	AESOption         []Option
@@ -67,6 +67,11 @@ type KmsOptions struct {
 	EncryptStreamFunc Encryptfunc
 }
 
+func WithKmsId(v string) KmsOption {
+	return func(o *KmsOptions) {
+		o.Id = v
+	}
+}
 func WithKmsKeyId(keyId string) KmsOption {
 	return func(o *KmsOptions) {
 		o.KeyId = keyId
@@ -88,4 +93,28 @@ func WithKmsDecryptStreamFunc(v Encryptfunc) KmsOption {
 	return func(o *KmsOptions) {
 		o.DecryptStreamFunc = v
 	}
+}
+
+func newEmbeddedCache() *embeddedCache {
+	return &embeddedCache{
+		m: &sync.Map{},
+	}
+}
+
+var _ = IKmsCache(embeddedCache{})
+
+type embeddedCache struct {
+	m *sync.Map
+}
+
+func (i embeddedCache) DekPlainSave(ctx context.Context, dek *DEKPlainEntry) (int64, error) {
+	i.m.Store(dek.Id, dek)
+	return 1, nil
+}
+func (i embeddedCache) DekPlainGet(ctx context.Context, id string) (*DEKPlainEntry, error) {
+	v, ok := i.m.Load(id)
+	if !ok {
+		return nil, fmt.Errorf("no found %v", id)
+	}
+	return v.(*DEKPlainEntry), nil
 }

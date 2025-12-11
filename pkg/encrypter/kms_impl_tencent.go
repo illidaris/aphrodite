@@ -27,12 +27,9 @@ https://www.tencentcloud.com/zh/document/product/1030/32774
 package encrypter
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
-	"io"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -61,112 +58,25 @@ type KmsTencentClient struct {
 	client *kms.Client
 }
 
-func (c KmsTencentClient) GenerateDEK(ctx context.Context, opts ...KmsOption) error {
-	option := newKmsOptions(opts...)
-
-	oldCipherDekBs, err := c.store.DekGet(ctx, option.KeyId)
-	if err != nil {
-		return err
-	}
-	if len(oldCipherDekBs) > 0 {
-		return errors.New("DEK已经存在")
-	}
+func (c KmsTencentClient) GenerateDEK(ctx context.Context, keyId, keySpec string) ([]byte, []byte, error) {
 	request := kms.NewGenerateDataKeyRequest()
-	request.KeyId = common.StringPtr(option.KeyId)
-	request.KeySpec = common.StringPtr(option.KeySpec)
-
+	request.KeyId = common.StringPtr(keyId)
+	request.KeySpec = common.StringPtr(keySpec)
 	rsp, err := c.client.GenerateDataKey(request)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-
 	cipherDek := *rsp.Response.CiphertextBlob
 	// 解密本地DEK
 	plainDek, err := c.DecryptDEK(cipherDek)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	// 解密并校验一次
 	if *rsp.Response.Plaintext != base64.StdEncoding.EncodeToString(plainDek) {
-		return fmt.Errorf("%s生成DEK不可用", *rsp.Response.RequestId)
+		return nil, nil, fmt.Errorf("%s生成DEK不可用", *rsp.Response.RequestId)
 	}
-	affect, err := c.store.DekSave(ctx, option.KeyId, cipherDek)
-	if err != nil {
-		return err
-	}
-	if affect == 0 {
-		return errors.New("保存DEK失败")
-	}
-	return nil
-}
-func (c KmsTencentClient) Encrypt(val []byte, opts ...KmsOption) ([]byte, error) {
-	return c.EncryptCtx(context.Background(), val, opts...)
-}
-
-func (c KmsTencentClient) Decrypt(val []byte, opts ...KmsOption) ([]byte, error) {
-	return c.DecryptCtx(context.Background(), val, opts...)
-}
-
-func (c KmsTencentClient) EncryptCtx(ctx context.Context, val []byte, opts ...KmsOption) ([]byte, error) {
-	outBs := []byte{}
-	in := bytes.NewBuffer(val)
-	out := bytes.NewBuffer(outBs)
-	err := c.EncryptStream(ctx, in, out, opts...)
-	if err != nil {
-		return outBs, err
-	}
-	return outBs, nil
-}
-
-func (c KmsTencentClient) EncryptStream(ctx context.Context, in io.Reader, out io.Writer, opts ...KmsOption) error {
-	option := newKmsOptions(opts...)
-	// 提取数据库中保存的cipherDek
-	cipherDek, err := c.store.DekGet(ctx, option.KeyId)
-	if err != nil {
-		return err
-	}
-	// 解密本地DEK
-	plainDek, err := c.DecryptDEK(cipherDek)
-	if err != nil {
-		return err
-	}
-	// plainDek DEK明文用户缓存在内存中使用，对数据进行本地加密
-	err = option.EncryptStreamFunc(in, out, plainDek, option.AESOption...)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c KmsTencentClient) DecryptCtx(ctx context.Context, val []byte, opts ...KmsOption) ([]byte, error) {
-	outBs := []byte{}
-	in := bytes.NewBuffer(val)
-	out := bytes.NewBuffer(outBs)
-	err := c.DecryptStream(ctx, in, out, opts...)
-	if err != nil {
-		return outBs, err
-	}
-	return outBs, nil
-}
-
-func (c KmsTencentClient) DecryptStream(ctx context.Context, in io.Reader, out io.Writer, opts ...KmsOption) error {
-	option := newKmsOptions(opts...)
-	// 提取数据库中保存的cipherDek
-	cipherDek, err := c.store.DekGet(ctx, option.KeyId)
-	if err != nil {
-		return err
-	}
-	// 解密本地DEK
-	plainDek, err := c.DecryptDEK(cipherDek)
-	if err != nil {
-		return err
-	}
-	// plainDek DEK明文用户缓存在内存中使用，对数据进行本地加密
-	err = option.DecryptStreamFunc(in, out, plainDek, option.AESOption...)
-	if err != nil {
-		return err
-	}
-	return nil
+	return plainDek, []byte(*rsp.Response.CiphertextBlob), nil
 }
 
 // DecryptDEK 使用KMS解密DEK
