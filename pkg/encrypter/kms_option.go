@@ -45,7 +45,7 @@ func newKmsOptions(opts ...KmsOption) *KmsOptions {
 		AESOption: []Option{
 			WithCipher(sm4.NewCipher),
 			WithBlockSize(sm4.BlockSize),
-			WithDecrypter(cipher.NewCTR),
+			WithEncrypter(cipher.NewCTR),
 			WithDecrypter(cipher.NewCTR),
 		},
 		EncryptStreamFunc: EncryptStream,

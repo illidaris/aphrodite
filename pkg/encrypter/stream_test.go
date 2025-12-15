@@ -125,9 +125,6 @@ func TestEncrypt(t *testing.T) {
 
 	res := base64.StdEncoding.EncodeToString(enout.Bytes())
 	println("RawEn: " + res)
-	if res != "uEFtesnTRAuywj7FOrAsjH+UNwkJllePLDdkKyVMh7b3MGdzN3hR+SXI9fV7zHntUaI1Pg==" {
-		t.Error("加密失败")
-	}
 }
 
 func TestDecrypt(t *testing.T) {

@@ -30,10 +30,10 @@ func TestKms(t *testing.T) {
 	s := &printStore{
 		m: map[string]*DEKEntry{},
 	}
-	c, err := NewKmsTencent(
-		WithKmsClientAppId("***"),
-		WithKmsClientSecret("***"),
-		WithKmsClientRegion("ap-shanghai"),
+	c, err := NewKmEmbed(
+		WithKmsClientAppId("AK*********"),
+		WithKmsClientSecret("asdasdasd"),
+		WithKmsClientRegion("*******"),
 	)
 	if err != nil {
 		t.Error(err)
@@ -42,14 +42,14 @@ func TestKms(t *testing.T) {
 	manage := NewKmsManage(c, s, nil)
 
 	ctx := context.Background()
-	keyIId := "***"
+	keyIId := "asdasdas"
 	_, err = manage.Generate(ctx, WithKmsKeyId(keyIId))
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	raw := "test !@#^&*())_*)_!@#!dataadsdasdasd"
+	raw := "test !@#^&*())_*)_!@#!dataadsdassada 谁呀dasd"
 	println("Raw: " + raw)
 
 	enin := bytes.NewBufferString(raw)
