@@ -28,9 +28,12 @@ type IKmsCache interface {
 
 type DEKEntry struct {
 	Id       string `json:"id"`       // id
+	Name     string `json:"name"`     // 名称
+	KmsType  int32  `json:"kmsType"`  // kms类型
 	KeyId    string `json:"keyId"`    // key Id
 	Cipher   string `json:"cipher"`   // 加密DEK
 	CreateAt int64  `json:"createAt"` // 生成时间
+	Describe string `json:"describe"` // 描述
 }
 
 func (i DEKEntry) WithPlain(v string) *DEKPlainEntry {
