@@ -1,7 +1,13 @@
 package mongoex
 
 // mongo 运算符
+
+//go:generate stringer -type=Operate -output vao_operate_string.go
 type Operate int32
+
+const (
+	OperateNil Operate = iota + 1
+)
 
 // 比较操作符
 const (
