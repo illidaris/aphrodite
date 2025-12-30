@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-
-	"github.com/spf13/cast"
 )
 
 // Table2Obj 将二维字符串数组rows转换为指定dst类型的切片。opts为转换选项。
@@ -128,11 +126,20 @@ func Objs2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]string,
 				comment := option.ParseAnno(tag, anno)
 				annoes = append(annoes, comment)
 			}
-			valStr := option.ValueConvert(tag, cast.ToString(desc.Val))
+			valStr := option.ValueConvert(tag, desc.Val)
 			if option.IgnoreZero && valStr == "0" {
 				valStr = ""
 			}
 			row = append(row, valStr)
+		}
+		for _, v := range option.Customs {
+			if len(annoes) > 0 {
+				annoes = append(annoes, v.Anno)
+			}
+			if len(heads) > 0 {
+				heads = append(heads, v.Field)
+			}
+			row = append(row, v.F(dst))
 		}
 		rows = append(rows, row)
 	}

@@ -142,7 +142,7 @@ func Struct2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]strin
 				annoes = append(annoes, comment)
 			}
 			val := dataValue.Field(i).Interface()
-			valStr := option.ValueConvert(tag, cast.ToString(val))
+			valStr := option.ValueConvert(tag, val)
 			if option.IgnoreZero && valStr == "0" {
 				valStr = ""
 			}

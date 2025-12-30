@@ -1,23 +1,35 @@
 package table2struct
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/spf13/cast"
+)
+
+type CustomField struct {
+	Field string
+	Anno  string
+	F     ConvertFunc
+}
+type ConvertFunc func(interface{}) string
 
 // table2StructOption定义了Table2Struct转换的配置选项
 type table2StructOption struct {
-	StructTag        string                         // 结构体标签，默认为"json" ， 【新版不支持字段别名】
-	AllowTagFields   []string                       // 允许导入或者导出的标签字段，不设置表示无限制
-	IgnoreTagFields  []string                       // 忽略的字段列表
-	FieldConvertFunc map[string]func(string) string // 字段转换函数，默认为空，不转换
-	IgnoreZero       bool                           // 是否忽略零值，默认为false，不忽略
-	AnnoTag          string                         // 注释标签，默认为"gorm"
-	AnnoTagSplit     string                         // 注释标签分隔符，默认为";"
-	AnnoTagKey       string                         // 注释标签键，默认为"comment"
-	AnnoTagKeySplit  string                         // 注释标签键分隔符，默认为":"
-	AnnoMap          map[string]string              // 注释标签键值对，默认为空
-	HeadIndex        int                            // 表头索引，默认为0
-	StartRowIndex    int                            // 起始行索引，默认为1，即第一行数据开始
-	Limit            int                            // 转换行数限制，默认为0，表示无限制
-	Deep             bool                           // 是否深度遍历
+	StructTag        string                 // 结构体标签，默认为"json" ， 【新版不支持字段别名】
+	AllowTagFields   []string               // 允许导入或者导出的标签字段，不设置表示无限制
+	IgnoreTagFields  []string               // 忽略的字段列表
+	FieldConvertFunc map[string]ConvertFunc // 字段转换函数，默认为空，不转换
+	IgnoreZero       bool                   // 是否忽略零值，默认为false，不忽略
+	AnnoTag          string                 // 注释标签，默认为"gorm"
+	AnnoTagSplit     string                 // 注释标签分隔符，默认为";"
+	AnnoTagKey       string                 // 注释标签键，默认为"comment"
+	AnnoTagKeySplit  string                 // 注释标签键分隔符，默认为":"
+	AnnoMap          map[string]string      // 注释标签键值对，默认为空
+	HeadIndex        int                    // 表头索引，默认为0
+	StartRowIndex    int                    // 起始行索引，默认为1，即第一行数据开始
+	Limit            int                    // 转换行数限制，默认为0，表示无限制
+	Deep             bool                   // 是否深度遍历
+	Customs          []CustomField          // 自定义字段
 }
 
 // ParseAnno 解析注释
@@ -60,10 +72,10 @@ func (o table2StructOption) FieldAllow(field string) bool {
 }
 
 // ValueConvert 值转化
-func (o table2StructOption) ValueConvert(field, value string) string {
+func (o table2StructOption) ValueConvert(field string, value interface{}) string {
 	f, ok := o.FieldConvertFunc[field]
 	if !ok || f == nil {
-		return value
+		return cast.ToString(value)
 	}
 	return f(value)
 }
@@ -74,7 +86,7 @@ func newTable2StructOption(opts ...Table2StructOptionFunc) table2StructOption {
 		StructTag:        "json",
 		AllowTagFields:   []string{},
 		IgnoreTagFields:  []string{},
-		FieldConvertFunc: map[string]func(string) string{},
+		FieldConvertFunc: map[string]ConvertFunc{},
 		AnnoTag:          "gorm",
 		AnnoTagSplit:     ";",
 		AnnoTagKey:       "comment",
@@ -121,8 +133,17 @@ func WithIgnoreZero() func(opt *table2StructOption) {
 	}
 }
 
-// WithFieldConvertFunc 字段值转化函数
+// Deprecated: ithFieldConvertFunc 字段值转化函数, 用WithFieldVConvertFunc替换
 func WithFieldConvertFunc(field string, f func(string) string) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.FieldConvertFunc[field] = func(i interface{}) string {
+			return f(cast.ToString(i))
+		}
+	}
+}
+
+// WithFieldVConvertFunc 字段值转化函数
+func WithFieldVConvertFunc(field string, f func(interface{}) string) func(opt *table2StructOption) {
 	return func(opt *table2StructOption) {
 		opt.FieldConvertFunc[field] = f
 	}
@@ -190,5 +211,19 @@ func WithAnnoMap(m map[string]string) func(opt *table2StructOption) {
 func WithDeep() func(opt *table2StructOption) {
 	return func(opt *table2StructOption) {
 		opt.Deep = true
+	}
+}
+
+// WithCustom 自定义字段
+func WithCustom(field, anno string, f ConvertFunc) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		if opt.Customs == nil {
+			opt.Customs = []CustomField{}
+		}
+		opt.Customs = append(opt.Customs, CustomField{
+			Field: field,
+			Anno:  anno,
+			F:     f,
+		})
 	}
 }
