@@ -116,10 +116,9 @@ func TestObjs2Table2(t *testing.T) {
 
 		convey.Convey("x", func() {
 			headers, rows, err := Objs2Table(demos,
-				WithDeep(),
 				WithAllowTagFields(
-					"Display.Code",
-					"Display.Name",
+					"Id",
+					"Cover",
 					// "x1",
 					// "x2",
 				),
