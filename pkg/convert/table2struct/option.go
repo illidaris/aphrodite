@@ -95,6 +95,7 @@ func newTable2StructOption(opts ...Table2StructOptionFunc) table2StructOption {
 		HeadIndex:        0,
 		StartRowIndex:    1,
 		Limit:            0,
+		Customs:          []CustomField{},
 	}
 	for _, f := range opts {
 		f(&opt)
@@ -217,9 +218,6 @@ func WithDeep() func(opt *table2StructOption) {
 // WithCustom 自定义字段
 func WithCustom(field, anno string, f ConvertFunc) func(opt *table2StructOption) {
 	return func(opt *table2StructOption) {
-		if opt.Customs == nil {
-			opt.Customs = []CustomField{}
-		}
 		opt.Customs = append(opt.Customs, CustomField{
 			Field: field,
 			Anno:  anno,
