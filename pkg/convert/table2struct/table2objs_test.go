@@ -65,5 +65,21 @@ func TestObjs2Table(t *testing.T) {
 			Table2Objs(&target, all, WithDeep(), WithStartRowIndex(2), WithHeadIndex(1))
 			convey.So(raws, convey.ShouldEqual, target)
 		})
+
+		convey.Convey("x", func() {
+			headers, rows, err := Objs2Table(demos,
+				WithCustom("x1", "字段1", func(i interface{}) string {
+					return "1"
+				}),
+				WithCustom("x2", "字段2", func(i interface{}) string {
+					return "2"
+				}),
+			)
+			convey.So(err, convey.ShouldBeNil)
+			all := [][]string{}
+			all = append(all, headers...)
+			all = append(all, rows...)
+			println(all)
+		})
 	})
 }
