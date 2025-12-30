@@ -133,10 +133,10 @@ func Objs2Table(dsts []interface{}, opts ...Table2StructOptionFunc) ([][]string,
 			row = append(row, valStr)
 		}
 		for _, v := range option.Customs {
-			if len(annoes) > 0 {
+			if len(annoes) > 0 && rowIndex == 0 {
 				annoes = append(annoes, v.Anno)
 			}
-			if len(heads) > 0 {
+			if len(heads) > 0 && rowIndex == 0 {
 				heads = append(heads, v.Field)
 			}
 			row = append(row, v.F(dst))

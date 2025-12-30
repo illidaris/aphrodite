@@ -94,7 +94,7 @@ func TestObjs2Table2(t *testing.T) {
 	convey.Convey("TestObjs2Table", t, func() {
 		demos := []interface{}{}
 		raws := []Demo{}
-		for index, v := range []int64{1} {
+		for index, v := range []int64{1, 2, 3} {
 			demo := Demo{
 				ShowRange: &RangeSection{},
 			}
@@ -126,6 +126,12 @@ func TestObjs2Table2(t *testing.T) {
 					return "1"
 				}),
 				WithCustom("x2", "字段2", func(i interface{}) string {
+					return "2"
+				}),
+				WithCustom("x3", "字段1", func(i interface{}) string {
+					return "1"
+				}),
+				WithCustom("x4", "字段2", func(i interface{}) string {
 					return "2"
 				}),
 			)
