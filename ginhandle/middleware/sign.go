@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"crypto/sha256"
 	"net/http"
 	"time"
@@ -16,12 +17,13 @@ import (
 // 用于前端签名使用，最好配合mojito_bg.wasm
 func WebSignMiddleware(sopts ...WebsignOption) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		opts := NewWebsignOptions(sopts...)
 		app := c.Query(signature.SignAppID)
 		ver := c.Query("ver")
 		tsStr := c.Query(signature.SignKeyTimestamp)
 		// 校验签名
-		if opts.Enable {
+		if !opts.Skip(ctx) {
 			secret, ok := opts.Secrets[app]
 			if !ok {
 				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_APP.New("应用访问被拒绝")))
@@ -68,7 +70,6 @@ func NewWebsignOptions(opts ...WebsignOption) *WebsignOptions {
 		AllowHosts:  map[string]struct{}{},
 		AllowVers:   map[string]struct{}{},
 		Timeout:     time.Minute * 3,
-		Enable:      false,
 		Secrets:     map[string]string{},
 		RestOptions: []signature.OptionFunc{},
 	}
@@ -78,9 +79,9 @@ func NewWebsignOptions(opts ...WebsignOption) *WebsignOptions {
 	return o
 }
 
-func WithEnable() WebsignOption {
+func WithSkipFunc(v func(context.Context) bool) WebsignOption {
 	return func(opts *WebsignOptions) {
-		opts.Enable = true
+		opts.SkipFunc = v
 	}
 }
 
@@ -129,12 +130,19 @@ func WithRestOptions(vs ...signature.OptionFunc) WebsignOption {
 // WebsignOptions 定义了Web签名选项的结构体。
 // 其中包括是否启用签名、签名密钥、超时时间、允许的主机和允许的版本。
 type WebsignOptions struct {
-	Enable      bool                   // 是否启用签名
 	Secrets     map[string]string      // 签名所用的密钥
 	Timeout     time.Duration          // 请求超时时间
 	AllowHosts  map[string]struct{}    // 允许签名的主机名集合
 	AllowVers   map[string]struct{}    // 允许签名的版本集合
 	RestOptions []signature.OptionFunc // 框架参数
+	SkipFunc    func(context.Context) bool
+}
+
+func (opts *WebsignOptions) Skip(ctx context.Context) bool {
+	if opts.SkipFunc == nil {
+		return false
+	}
+	return opts.SkipFunc(ctx)
 }
 
 // AllowHost 判断给定的主机名是否在允许的主机名集合中。
