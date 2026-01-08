@@ -12,12 +12,6 @@ import (
 	"github.com/spf13/cast"
 )
 
-// Define shell operation options and utility functions related to caching.
-
-const (
-	KEY_LOCK_SUFFIX = "_locked" // Suffix appended to cache keys for locking purposes
-)
-
 // ShellOptionFunc is a function type that configures ShellOptions.
 type ShellOptionFunc func(option *ShellOptions)
 

@@ -1,6 +1,9 @@
 package dependency
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // ICache interface defines the basic operations for a cache.
 type ICache interface {
@@ -37,4 +40,13 @@ type ICache interface {
 	// key: The key of the cache item.
 	// Returns: An error if the deletion operation fails.
 	Delete(key string) error
+}
+
+type ILuaCache interface {
+	Eval(script string, keys []string, args ...any) (any, error)
+	EvalContext(ctx context.Context, script string, keys []string, args ...any) (any, error)
+	Delete(key string) error
+	DeleteContext(ctx context.Context, key string) error
+	Get(key string) (any, error)
+	GetContext(ctx context.Context, key string) (any, error)
 }
