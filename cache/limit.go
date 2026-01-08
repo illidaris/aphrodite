@@ -125,7 +125,7 @@ func (o LimitOptions) Check(ctx context.Context) (bool, error) {
 	return o.skipFunc(ctx), nil
 }
 
-func ClearLimitIncr(ctx context.Context, bizId int64, id string, opts ...LimitOption) (int64, error) {
+func LimitClearIncr(ctx context.Context, bizId int64, id string, opts ...LimitOption) (int64, error) {
 	option := NewLimitOptions(opts...)
 	_, err := option.Check(ctx)
 	if err != nil {
@@ -133,14 +133,14 @@ func ClearLimitIncr(ctx context.Context, bizId int64, id string, opts ...LimitOp
 	}
 	// 构造Redis键名：前缀+业务+操作+ID 的四段式结构
 	key := option.BuildKey(bizId, id)
-	err = option.cache.Delete(key)
+	affect, err := option.cache.Delete(key)
 	if err != nil {
-		return 0, err
+		return affect, err
 	}
-	return 1, err
+	return affect, err
 }
 
-func GetCursor(ctx context.Context, bizId int64, id string, opts ...LimitOption) (int64, error) {
+func LimitGetCursor(ctx context.Context, bizId int64, id string, opts ...LimitOption) (int64, error) {
 	option := NewLimitOptions(opts...)
 	_, err := option.Check(ctx)
 	if err != nil {

@@ -45,8 +45,8 @@ type ICache interface {
 type ILuaCache interface {
 	Eval(script string, keys []string, args ...any) (any, error)
 	EvalContext(ctx context.Context, script string, keys []string, args ...any) (any, error)
-	Delete(key string) error
-	DeleteContext(ctx context.Context, key string) error
-	Get(key string) (any, error)
-	GetContext(ctx context.Context, key string) (any, error)
+	Delete(key string) (int64, error)
+	DeleteContext(ctx context.Context, key string) (int64, error)
+	Get(key string) (string, error)
+	GetContext(ctx context.Context, key string) (string, error)
 }
