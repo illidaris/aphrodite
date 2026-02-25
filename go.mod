@@ -10,6 +10,7 @@ require (
 	github.com/IBM/sarama v1.43.1
 	github.com/agiledragon/gomonkey/v2 v2.10.1
 	github.com/gin-contrib/cors v1.7.6
+	github.com/gin-contrib/sessions v1.0.4
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-redis/redismock/v8 v8.11.5
@@ -21,6 +22,7 @@ require (
 	github.com/illidaris/rest v1.5.5
 	github.com/makiuchi-d/gozxing v0.1.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/oklog/ulid/v2 v2.1.1
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/prometheus/client_golang v1.13.0
 	github.com/schollz/progressbar/v3 v3.15.0
@@ -33,13 +35,14 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/kms v1.3.7
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/xuri/excelize/v2 v2.4.1
-	go.mongodb.org/mongo-driver v1.17.1
+	go.mongodb.org/mongo-driver v1.17.3
 	go.uber.org/automaxprocs v1.6.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.39.0
+	golang.org/x/oauth2 v0.6.0
 	golang.org/x/text v0.26.0
 	gorm.io/driver/mysql v1.5.2
-	gorm.io/gorm v1.25.5
+	gorm.io/gorm v1.25.12
 	gorm.io/plugin/soft_delete v1.2.1
 )
 
@@ -75,8 +78,11 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
+	github.com/golang/snappy v1.0.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
+	github.com/gorilla/context v1.1.2 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/gorilla/sessions v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -95,7 +101,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible // indirect
-	github.com/klauspost/compress v1.17.7 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
@@ -159,6 +165,7 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
