@@ -14,6 +14,7 @@ const (
 type ICache interface {
 	SetCtx(context.Context, string, string, time.Duration) error
 	GetCtx(context.Context, string) (string, error)
+	DelCtx(context.Context, string) error
 }
 
 type defaultCache struct {
@@ -29,4 +30,9 @@ func (c defaultCache) GetCtx(ctx context.Context, key string) (string, error) {
 		return value.(string), nil
 	}
 	return "", nil
+}
+
+func (c defaultCache) DelCtx(ctx context.Context, key string) error {
+	c.Delete(key)
+	return nil
 }

@@ -38,21 +38,24 @@ func GetAuthorizeURl(ctx context.Context, opts ...Option) (string, AuthorizePara
 func OAuthCallback(ctx context.Context, param *OAuthCallbackParam, findCodeVerifier func(string) string, opts ...Option) (*oauth2.Token, error) {
 	opt := NewOptions(opts...)
 	bizId := contextex.GetBizId(ctx)
-	var cacheParamStr string
+	cacheParam := &AuthorizeParam{}
 	if findCodeVerifier != nil {
-		cacheParamStr = findCodeVerifier(param.State)
+		v := findCodeVerifier(param.State)
+		err := cacheParam.Decode(v, opt.GetBusiSecretHandle(ctx))
+		if err != nil {
+			return nil, err
+		}
 	} else if opt.Cache != nil {
 		key := fmt.Sprintf(CACHE_KEY_CODE_VERIFIER, contextex.GetBizId(ctx), param.State)
 		res, err := opt.Cache.GetCtx(ctx, key)
 		if err != nil {
 			return nil, err
 		}
-		cacheParamStr = res
-	}
-	cacheParam := &AuthorizeParam{}
-	err := cacheParam.Decode(cacheParamStr, opt.GetBusiSecretHandle(ctx))
-	if err != nil {
-		return nil, err
+		defer opt.Cache.DelCtx(ctx, key)
+		err = json.Unmarshal([]byte(res), cacheParam)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if err := cacheParam.Valid(bizId); err != nil {
 		return nil, err
