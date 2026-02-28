@@ -1,6 +1,7 @@
 package ginoauth2
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -33,7 +34,7 @@ func LoginByOAuth2Controller(opts ...apOAuth2.Option) func(c *gin.Context) {
 	}
 }
 
-func CallbackOAuth2Controller(handle func(token *oauth2.Token) (any, error), opts ...apOAuth2.Option) func(c *gin.Context) {
+func CallbackOAuth2Controller(handle func(ctx context.Context, token *oauth2.Token) (any, error), opts ...apOAuth2.Option) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		param := &apOAuth2.OAuthCallbackParam{}
 		if err := c.ShouldBind(param); err != nil {
@@ -53,7 +54,7 @@ func CallbackOAuth2Controller(handle func(token *oauth2.Token) (any, error), opt
 			c.JSON(http.StatusOK, dto.NewResponse(nil, nil))
 			return
 		}
-		resp, err := handle(token)
+		resp, err := handle(c.Request.Context(), token)
 		if err != nil {
 			c.JSON(http.StatusOK, dto.NewResponse(resp, exception.ERR_BUSI.Wrap(err)))
 			return
