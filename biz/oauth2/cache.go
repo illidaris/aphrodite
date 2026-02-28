@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	CACHE_KEY_CODE_VERIFIER = "_aph_oauth2:code_verifier:%d:%s"
+	CACHE_KEY_CODE_VERIFIER = "_aph_oauth2:code_verifier:%s"
 	SESSION_KEY             = "_aph_oauth2_session"
 )
 

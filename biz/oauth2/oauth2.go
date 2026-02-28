@@ -23,7 +23,7 @@ func GetAuthorizeURl(ctx context.Context, opts ...Option) (string, AuthorizePara
 		Expire:   time.Now().Add(dur).Unix(),
 	}
 	if opt.Cache != nil {
-		key := fmt.Sprintf(CACHE_KEY_CODE_VERIFIER, contextex.GetBizId(ctx), state)
+		key := fmt.Sprintf(CACHE_KEY_CODE_VERIFIER, state)
 		valBs, _ := json.Marshal(param)
 		err := opt.Cache.SetCtx(ctx, key, string(valBs), dur)
 		if err != nil {
@@ -46,7 +46,7 @@ func OAuthCallback(ctx context.Context, param *OAuthCallbackParam, findCodeVerif
 			return nil, err
 		}
 	} else if opt.Cache != nil {
-		key := fmt.Sprintf(CACHE_KEY_CODE_VERIFIER, contextex.GetBizId(ctx), param.State)
+		key := fmt.Sprintf(CACHE_KEY_CODE_VERIFIER, param.State)
 		res, err := opt.Cache.GetCtx(ctx, key)
 		if err != nil {
 			return nil, err
