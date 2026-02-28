@@ -60,20 +60,21 @@ func CallbackOAuth2Controller(handle func(ctx context.Context, token *oauth2.Tok
 		}
 		session := sessions.Default(c)
 		value := session.Get(LOGIN_BY_OAUTH2)
+		defer session.Delete(LOGIN_BY_OAUTH2)
 		token, err := apOAuth2.OAuthCallback(c.Request.Context(), param, func(state string) string {
 			return cast.ToString(value)
 		}, opts...)
 		if err != nil {
-			c.JSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+			c.JSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_UNAUTH.Wrap(err)))
 			return
 		}
 		if handle == nil {
-			c.JSON(http.StatusOK, dto.NewResponse(nil, nil))
+			c.JSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_UNAUTH.New("没有验证函数")))
 			return
 		}
 		resp, err := handle(c.Request.Context(), token)
 		if err != nil {
-			c.JSON(http.StatusOK, dto.NewResponse(resp, exception.ERR_BUSI.Wrap(err)))
+			c.JSON(http.StatusOK, dto.NewResponse(resp, exception.ERR_COMMON_UNAUTH.Wrap(err)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.NewResponse(resp, nil))
