@@ -2,6 +2,7 @@ package ginoauth2
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -39,21 +40,21 @@ func CallbackOAuth2Controller(handle func(ctx context.Context, token *oauth2.Tok
 	return func(c *gin.Context) {
 		param := &apOAuth2.OAuthCallbackParam{}
 		if err := c.ShouldBind(param); err != nil {
-			c.JSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+			c.JSON(http.StatusUnauthorized, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(fmt.Errorf("请求飞书登录态参数错误%v", err))))
 			return
 		}
 		token, err := apOAuth2.OAuthCallback(c.Request.Context(), param, nil, opts...)
 		if err != nil {
-			c.JSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_UNAUTH.Wrap(err)))
+			c.JSON(http.StatusUnauthorized, dto.NewResponse(nil, exception.ERR_COMMON_UNAUTH.Wrap(fmt.Errorf("获取飞书登录态失败%v", err))))
 			return
 		}
 		if handle == nil {
-			c.JSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_UNAUTH.New("没有验证函数")))
+			c.JSON(http.StatusUnauthorized, dto.NewResponse(nil, exception.ERR_COMMON_UNAUTH.New("没有配置验证过程")))
 			return
 		}
 		resp, err := handle(c.Request.Context(), token)
 		if err != nil {
-			c.JSON(http.StatusOK, dto.NewResponse(resp, exception.ERR_COMMON_UNAUTH.Wrap(err)))
+			c.JSON(http.StatusUnauthorized, dto.NewResponse(resp, exception.ERR_COMMON_UNAUTH.Wrap(err)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.NewResponse(resp, nil))
