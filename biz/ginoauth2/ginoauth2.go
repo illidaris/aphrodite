@@ -36,7 +36,7 @@ func LoginByOAuth2Controller(opts ...apOAuth2.Option) func(c *gin.Context) {
 	}
 }
 
-func CallbackOAuth2Controller(handle func(ctx context.Context, token *oauth2.Token) (any, error), opts ...apOAuth2.Option) func(c *gin.Context) {
+func CallbackOAuth2Controller(handle func(ctx context.Context, token *oauth2.Token) (any, exception.Exception), opts ...apOAuth2.Option) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		param := &apOAuth2.OAuthCallbackParam{}
 		if err := c.ShouldBind(param); err != nil {
@@ -52,9 +52,9 @@ func CallbackOAuth2Controller(handle func(ctx context.Context, token *oauth2.Tok
 			c.JSON(http.StatusUnauthorized, dto.NewResponse(nil, exception.ERR_COMMON_UNAUTH.New("没有配置验证过程")))
 			return
 		}
-		resp, err := handle(c.Request.Context(), token)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, dto.NewResponse(resp, exception.ERR_COMMON_UNAUTH.Wrap(err)))
+		resp, ex := handle(c.Request.Context(), token)
+		if ex != nil {
+			c.JSON(http.StatusOK, dto.NewResponse(resp, ex))
 			return
 		}
 		c.JSON(http.StatusOK, dto.NewResponse(resp, nil))
