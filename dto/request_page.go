@@ -24,6 +24,7 @@ func (r *SortField) GetIsDesc() bool {
 }
 
 var _ = dependency.IPage(&Page{})
+var _ = dependency.ISearchAfter(&Page{})
 
 // Page default page request
 type Page struct {
@@ -56,7 +57,12 @@ func (dto *Page) GetSize() int64 {
 func (dto *Page) GetAfterID() any {
 	return dto.AfterId
 }
-
+func (dto *Page) GetSortValues() []any {
+	if s, ok := dto.AfterId.([]any); ok {
+		return s
+	}
+	return []any{dto.AfterId}
+}
 func (dto *Page) GetSorts() []dependency.ISortField {
 	s := []dependency.ISortField{}
 	for _, v := range dto.Sorts {
