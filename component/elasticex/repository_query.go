@@ -162,6 +162,12 @@ func (r *BaseRepository[T]) GetSearchServiceFrmOpt(ctx context.Context, opt *dep
 		query := WithQuery(opt.Conds...)
 		srv.Query(query)
 	}
+	if sa := opt.SearchAfter; sa != nil {
+		for _, f := range opt.Page.GetSorts() {
+			srv = srv.Sort(f.GetField(), !f.GetIsDesc())
+		}
+		return srv.SearchAfter(sa.GetSortValues()...)
+	}
 	if opt.Page != nil {
 		// query sorts
 		sorts := WithSort(opt.Page.GetSorts()...)
@@ -172,12 +178,6 @@ func (r *BaseRepository[T]) GetSearchServiceFrmOpt(ctx context.Context, opt *dep
 			opt.BatchSize = MAX_WINDOW_SIZE
 		}
 		srv = srv.From(0).Size(int(opt.BatchSize))
-	}
-	if sa := opt.SearchAfter; sa != nil {
-		for _, f := range opt.Page.GetSorts() {
-			srv = srv.Sort(f.GetField(), !f.GetIsDesc())
-		}
-		srv = srv.SearchAfter(sa.GetSortValues()...)
 	}
 	return srv
 }
