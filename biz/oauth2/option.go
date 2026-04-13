@@ -114,7 +114,7 @@ func WithCache(cache ICache) Option {
 		o.Cache = cache
 	}
 }
-func BizIdHandle(handle func(context.Context) int64) Option {
+func WithBizIdHandle(handle func(context.Context) int64) Option {
 	return func(o *options) {
 		o.BizIdHandle = handle
 	}
