@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/illidaris/aphrodite/pkg/contextex"
 	"github.com/oklog/ulid/v2"
 	"golang.org/x/oauth2"
 )
@@ -19,7 +18,7 @@ func GetAuthorizeURl(ctx context.Context, opts ...Option) (string, AuthorizePara
 	dur := opt.GetCodeChallengeExpireHandle(ctx)
 	param := AuthorizeParam{
 		Verifier: verifier,
-		BizId:    contextex.GetBizId(ctx),
+		BizId:    opt.BizIdHandle(ctx),
 		Expire:   time.Now().Add(dur).Unix(),
 	}
 	if opt.Cache != nil {
@@ -37,7 +36,7 @@ func GetAuthorizeURl(ctx context.Context, opts ...Option) (string, AuthorizePara
 // OAuthCallback 处理OAuth回调
 func OAuthCallback(ctx context.Context, param *OAuthCallbackParam, findCodeVerifier func(string) string, opts ...Option) (*oauth2.Token, error) {
 	opt := NewOptions(opts...)
-	bizId := contextex.GetBizId(ctx)
+	bizId := opt.BizIdHandle(ctx)
 	cacheParam := &AuthorizeParam{}
 	if findCodeVerifier != nil {
 		v := findCodeVerifier(param.State)

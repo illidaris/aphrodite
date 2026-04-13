@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/illidaris/aphrodite/pkg/contextex"
 	"golang.org/x/oauth2"
 )
 
@@ -19,6 +20,7 @@ type options struct {
 	GetScopesHandle              func(context.Context) []string
 	GetBusiSecretHandle          Handle
 	GetCodeChallengeExpireHandle func(context.Context) time.Duration
+	BizIdHandle                  func(context.Context) int64
 	Cache                        ICache
 }
 
@@ -47,6 +49,9 @@ func NewOptions(opts ...Option) *options {
 		GetBusiSecretHandle:   func(context.Context) string { return "" },
 		GetCodeChallengeExpireHandle: func(context.Context) time.Duration {
 			return 5 * time.Minute
+		},
+		BizIdHandle: func(ctx context.Context) int64 {
+			return contextex.GetBizId(ctx)
 		},
 		Cache: defaultCache{&sync.Map{}},
 	}
@@ -107,5 +112,10 @@ func WithGetCodeChallengeExpireHandle(handle func(context.Context) time.Duration
 func WithCache(cache ICache) Option {
 	return func(o *options) {
 		o.Cache = cache
+	}
+}
+func BizIdHandle(handle func(context.Context) int64) Option {
+	return func(o *options) {
+		o.BizIdHandle = handle
 	}
 }
