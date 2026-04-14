@@ -24,7 +24,7 @@ func GetAuthorizeURl(ctx context.Context, opts ...Option) (string, AuthorizePara
 	if opt.Cache != nil {
 		key := fmt.Sprintf(CACHE_KEY_CODE_VERIFIER, state)
 		valBs, _ := json.Marshal(param)
-		err := opt.Cache.SetCtx(ctx, key, string(valBs), dur)
+		err := opt.Cache().SetCtx(ctx, key, string(valBs), dur)
 		if err != nil {
 			return "", param, param.Encode(opt.GetBusiSecretHandle(ctx)), err
 		}
@@ -46,11 +46,11 @@ func OAuthCallback(ctx context.Context, param *OAuthCallbackParam, findCodeVerif
 		}
 	} else if opt.Cache != nil {
 		key := fmt.Sprintf(CACHE_KEY_CODE_VERIFIER, param.State)
-		res, err := opt.Cache.GetCtx(ctx, key)
+		res, err := opt.Cache().GetCtx(ctx, key)
 		if err != nil {
 			return nil, err
 		}
-		defer opt.Cache.DelCtx(ctx, key)
+		defer opt.Cache().DelCtx(ctx, key)
 		err = json.Unmarshal([]byte(res), cacheParam)
 		if err != nil {
 			return nil, err

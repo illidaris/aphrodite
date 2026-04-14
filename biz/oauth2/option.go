@@ -9,6 +9,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var _defaultCache = defaultCache{&sync.Map{}}
+
 type Handle func(context.Context) string
 type Option func(*options)
 type options struct {
@@ -21,7 +23,7 @@ type options struct {
 	GetBusiSecretHandle          Handle
 	GetCodeChallengeExpireHandle func(context.Context) time.Duration
 	BizIdHandle                  func(context.Context) int64
-	Cache                        ICache
+	Cache                        func() ICache
 }
 
 func (opt options) GetOAuth2Config(ctx context.Context) *oauth2.Config {
@@ -53,7 +55,9 @@ func NewOptions(opts ...Option) *options {
 		BizIdHandle: func(ctx context.Context) int64 {
 			return contextex.GetBizId(ctx)
 		},
-		Cache: defaultCache{&sync.Map{}},
+		Cache: func() ICache {
+			return _defaultCache
+		},
 	}
 	for _, opt := range opts {
 		opt(o)
@@ -111,9 +115,18 @@ func WithGetCodeChallengeExpireHandle(handle func(context.Context) time.Duration
 
 func WithCache(cache ICache) Option {
 	return func(o *options) {
-		o.Cache = cache
+		o.Cache = func() ICache {
+			return cache
+		}
 	}
 }
+
+func WithCacheFunc(f func() ICache) Option {
+	return func(o *options) {
+		o.Cache = f
+	}
+}
+
 func WithBizIdHandle(handle func(context.Context) int64) Option {
 	return func(o *options) {
 		o.BizIdHandle = handle
