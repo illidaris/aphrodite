@@ -35,6 +35,28 @@ func BizGinExHandler[Req dependency.IBindRequest, Resp any](request Req, exec fu
 	}
 }
 
+// GinOneHandler 通用调用处理
+func GinOneHandler[Req, Resp any](exec func(context.Context, *Req) (Resp, exception.Exception)) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		request := new(Req)
+		ctx := c.Request.Context()
+		if exec == nil {
+			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_BUSI.New("当前业务尚未启用")))
+			return
+		}
+		if err := c.ShouldBind(request); err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+			return
+		}
+		if err := c.ShouldBindUri(request); err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+			return
+		}
+		res, ex := exec(ctx, request)
+		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
+	}
+}
+
 // GinExHandler 通用调用处理
 func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) (Resp, exception.Exception), reqFuncs []func(context.Context, *Req) exception.Exception) func(c *gin.Context) {
 	return func(c *gin.Context) {

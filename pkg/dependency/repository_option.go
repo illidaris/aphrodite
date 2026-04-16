@@ -1,6 +1,8 @@
 package dependency
 
-import "context"
+import (
+	"context"
+)
 
 const (
 	BATCH_SIZE = 1000 // default batch size
@@ -192,4 +194,21 @@ func WithIterativeFunc(v ...func(any)) BaseOptionFunc {
 		}
 		o.IterativeFuncs = append(o.IterativeFuncs, v...)
 	}
+}
+
+func ShardingOptions(v any) []BaseOptionFunc {
+	opts := []BaseOptionFunc{}
+	if v, ok := any(v).(IDbShardingCond); ok {
+		keys := v.GetDbShardingKeys()
+		if len(keys) > 0 {
+			opts = append(opts, WithDbShardingKey(keys...))
+		}
+	}
+	if v, ok := any(v).(ITbShardingCond); ok {
+		keys := v.GetTbShardingKeys()
+		if len(keys) > 0 {
+			opts = append(opts, WithTbShardingKey(keys...))
+		}
+	}
+	return opts
 }
