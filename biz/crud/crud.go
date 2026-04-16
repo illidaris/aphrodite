@@ -38,19 +38,19 @@ func Create[T dependency.IEntity](repo dependency.IRepository[T], iterater func(
 
 func DetailByIdFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, req any, id int64) (*T, exception.Exception) {
 	return func(ctx context.Context, req any, id int64) (*T, exception.Exception) {
-		return detailFunc(repo, opts...)(ctx, req, "`id` = ?", id)
+		return BaseDetailFunc(repo, opts...)(ctx, req, "`id` = ?", id)
 	}
 }
 
 func DetailByCodeFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, req any, code string) (*T, exception.Exception) {
 	return func(ctx context.Context, req any, code string) (*T, exception.Exception) {
-		return detailFunc(repo, opts...)(ctx, req, "`code` = ?", code)
+		return BaseDetailFunc(repo, opts...)(ctx, req, "`code` = ?", code)
 	}
 }
 
 func DetailFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, req dependency.ICond) (*T, exception.Exception) {
 	return func(ctx context.Context, req dependency.ICond) (*T, exception.Exception) {
-		return detailFunc(repo, opts...)(ctx, req, req.GetConds()...)
+		return BaseDetailFunc(repo, opts...)(ctx, req, req.GetConds()...)
 	}
 }
 

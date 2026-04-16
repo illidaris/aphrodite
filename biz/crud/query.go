@@ -174,7 +174,7 @@ func EntitiesFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...
 	}
 }
 
-func detailFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, req any, conds ...any) (*T, exception.Exception) {
+func BaseDetailFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, req any, conds ...any) (*T, exception.Exception) {
 	return func(ctx context.Context, req any, conds ...any) (*T, exception.Exception) {
 		option := &Options{
 			RepoOptions: []dependency.BaseOptionFunc{
