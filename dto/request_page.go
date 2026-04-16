@@ -38,32 +38,32 @@ func (dto *Page) SetPageIndex(index int64) {
 	dto.PageIndex = index
 }
 
-func (dto *Page) GetPageIndex() int64 {
+func (dto Page) GetPageIndex() int64 {
 	return dto.PageIndex
 }
 
-func (dto *Page) GetPageSize() int64 {
+func (dto Page) GetPageSize() int64 {
 	return dto.PageSize
 }
 
-func (dto *Page) GetBegin() int64 {
+func (dto Page) GetBegin() int64 {
 	return (dto.PageIndex - 1) * dto.PageSize
 }
 
-func (dto *Page) GetSize() int64 {
+func (dto Page) GetSize() int64 {
 	return dto.PageSize
 }
 
-func (dto *Page) GetAfterID() any {
+func (dto Page) GetAfterID() any {
 	return dto.AfterId
 }
-func (dto *Page) GetSortValues() []any {
+func (dto Page) GetSortValues() []any {
 	if s, ok := dto.AfterId.([]any); ok {
 		return s
 	}
 	return []any{dto.AfterId}
 }
-func (dto *Page) GetSorts() []dependency.ISortField {
+func (dto Page) GetSorts() []dependency.ISortField {
 	s := []dependency.ISortField{}
 	for _, v := range dto.Sorts {
 		words := strings.Split(v, "|")
