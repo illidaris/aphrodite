@@ -174,6 +174,32 @@ func EntitiesFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...
 	}
 }
 
+func EntitiesByAnyFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, db, tb []any, conds ...any) ([]T, exception.Exception) {
+	return func(ctx context.Context, db, tb []any, conds ...any) ([]T, exception.Exception) {
+		option := &Options{
+			RepoOptions: []dependency.BaseOptionFunc{
+				dependency.WithReadOnly(true),
+			},
+		}
+		if len(db) > 0 {
+			option.RepoOptions = append(option.RepoOptions, dependency.WithDbShardingKey(db...))
+		}
+		if len(tb) > 0 {
+			option.RepoOptions = append(option.RepoOptions, dependency.WithTbShardingKey(tb...))
+		}
+		option.RepoOptions = append(option.RepoOptions, dependency.WithConds(conds...))
+		for _, opt := range opts {
+			opt(option)
+		}
+
+		ps, err := repo.BaseQuery(ctx, option.RepoOptions...)
+		if err != nil {
+			return nil, exception.ERR_BUSI.Wrap(err)
+		}
+		return ps, nil
+	}
+}
+
 func BaseDetailFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, req any, conds ...any) (*T, exception.Exception) {
 	return func(ctx context.Context, req any, conds ...any) (*T, exception.Exception) {
 		option := &Options{
@@ -182,6 +208,32 @@ func BaseDetailFunc[T dependency.IEntity](repo dependency.IRepository[T], opts .
 			},
 		}
 		option.RepoOptions = append(option.RepoOptions, dependency.ShardingOptions(req)...)
+		option.RepoOptions = append(option.RepoOptions, dependency.WithConds(conds...))
+		for _, opt := range opts {
+			opt(option)
+		}
+
+		p, err := repo.BaseGet(ctx, option.RepoOptions...)
+		if err != nil {
+			return p, exception.ERR_BUSI_NOFOUND.Wrap(err)
+		}
+		return p, nil
+	}
+}
+
+func DetailByAnyFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, db, tb []any, conds ...any) (*T, exception.Exception) {
+	return func(ctx context.Context, db, tb []any, conds ...any) (*T, exception.Exception) {
+		option := &Options{
+			RepoOptions: []dependency.BaseOptionFunc{
+				dependency.WithReadOnly(true),
+			},
+		}
+		if len(db) > 0 {
+			option.RepoOptions = append(option.RepoOptions, dependency.WithDbShardingKey(db...))
+		}
+		if len(tb) > 0 {
+			option.RepoOptions = append(option.RepoOptions, dependency.WithTbShardingKey(tb...))
+		}
 		option.RepoOptions = append(option.RepoOptions, dependency.WithConds(conds...))
 		for _, opt := range opts {
 			opt(option)
