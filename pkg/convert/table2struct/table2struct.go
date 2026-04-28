@@ -36,6 +36,10 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 					headMap[h] = index
 				}
 			}
+			if option.HeadCheckFunc != nil {
+				err = option.HeadCheckFunc(headMap)
+				return
+			}
 		}
 		// 跳过起始行之前的数据
 		if rowIndex < option.StartRowIndex {

@@ -15,21 +15,22 @@ type ConvertFunc func(interface{}) string
 
 // table2StructOption定义了Table2Struct转换的配置选项
 type table2StructOption struct {
-	StructTag        string                 // 结构体标签，默认为"json" ， 【新版不支持字段别名】
-	AllowTagFields   []string               // 允许导入或者导出的标签字段，不设置表示无限制
-	IgnoreTagFields  []string               // 忽略的字段列表
-	FieldConvertFunc map[string]ConvertFunc // 字段转换函数，默认为空，不转换
-	IgnoreZero       bool                   // 是否忽略零值，默认为false，不忽略
-	AnnoTag          string                 // 注释标签，默认为"gorm"
-	AnnoTagSplit     string                 // 注释标签分隔符，默认为";"
-	AnnoTagKey       string                 // 注释标签键，默认为"comment"
-	AnnoTagKeySplit  string                 // 注释标签键分隔符，默认为":"
-	AnnoMap          map[string]string      // 注释标签键值对，默认为空
-	HeadIndex        int                    // 表头索引，默认为0
-	StartRowIndex    int                    // 起始行索引，默认为1，即第一行数据开始
-	Limit            int                    // 转换行数限制，默认为0，表示无限制
-	Deep             bool                   // 是否深度遍历
-	Customs          []CustomField          // 自定义字段
+	StructTag        string                     // 结构体标签，默认为"json" ， 【新版不支持字段别名】
+	AllowTagFields   []string                   // 允许导入或者导出的标签字段，不设置表示无限制
+	IgnoreTagFields  []string                   // 忽略的字段列表
+	FieldConvertFunc map[string]ConvertFunc     // 字段转换函数，默认为空，不转换
+	HeadCheckFunc    func(map[string]int) error // 列头字段校验
+	IgnoreZero       bool                       // 是否忽略零值，默认为false，不忽略
+	AnnoTag          string                     // 注释标签，默认为"gorm"
+	AnnoTagSplit     string                     // 注释标签分隔符，默认为";"
+	AnnoTagKey       string                     // 注释标签键，默认为"comment"
+	AnnoTagKeySplit  string                     // 注释标签键分隔符，默认为":"
+	AnnoMap          map[string]string          // 注释标签键值对，默认为空
+	HeadIndex        int                        // 表头索引，默认为0
+	StartRowIndex    int                        // 起始行索引，默认为1，即第一行数据开始
+	Limit            int                        // 转换行数限制，默认为0，表示无限制
+	Deep             bool                       // 是否深度遍历
+	Customs          []CustomField              // 自定义字段
 }
 
 // ParseAnno 解析注释
@@ -223,5 +224,12 @@ func WithCustom(field, anno string, f ConvertFunc) func(opt *table2StructOption)
 			Anno:  anno,
 			F:     f,
 		})
+	}
+}
+
+// WithHeadCheckFunc 列头校验函数
+func WithHeadCheckFunc(v func(map[string]int) error) func(opt *table2StructOption) {
+	return func(opt *table2StructOption) {
+		opt.HeadCheckFunc = v
 	}
 }
