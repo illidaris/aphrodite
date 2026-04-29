@@ -37,7 +37,9 @@ func Table2Objs(dst interface{}, rows [][]string, opts ...Table2StructOptionFunc
 			header = row
 			if option.HeadCheckFunc != nil {
 				err = option.HeadCheckFunc(headMap)
-				return
+				if err != nil {
+					return
+				}
 			}
 		}
 		// 跳过起始行之前的数据

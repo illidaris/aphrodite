@@ -38,7 +38,9 @@ func Table2Struct(dst interface{}, rows [][]string, opts ...Table2StructOptionFu
 			}
 			if option.HeadCheckFunc != nil {
 				err = option.HeadCheckFunc(headMap)
-				return
+				if err != nil {
+					return
+				}
 			}
 		}
 		// 跳过起始行之前的数据
