@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/illidaris/aphrodite/pkg/dependency"
-	"github.com/illidaris/aphrodite/pkg/group"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -35,33 +34,11 @@ func BaseExport[Req dependency.IPage, Resp dependency.IPaginator, Item any](
 	for _, f := range opts {
 		f(opt)
 	}
-	firstResp, ex := exportFunc(ctx, req)
-	if ex != nil {
-		return nil, opt.ExportName, ex
+	ch, err := basePaged(ctx, req, exportFunc, pagesFunc, getItemFunc, opt)
+	if err != nil {
+		return nil, opt.ExportName, err
 	}
-	pages := pagesFunc(req, firstResp)
-	inCh := make(chan Item, 10)
-	go func() {
-		defer close(inCh)
-		for _, v := range getItemFunc(firstResp) {
-			inCh <- v
-		}
-		_, _ = group.GroupBaseFunc(func(subReqs ...Req) (int64, error) {
-			affect := 0
-			for _, subReq := range subReqs {
-				resp, ex := exportFunc(ctx, subReq)
-				if ex != nil {
-					continue
-				}
-				for _, v := range getItemFunc(resp) {
-					inCh <- v
-				}
-				affect++
-			}
-			return int64(affect), nil
-		}, 1, pages...)
-	}()
-	return BaseExportToReader(ctx, inCh, opt)
+	return BaseExportToReader(ctx, ch, opt)
 }
 
 func BaseExportToReader[T any](ctx context.Context, inCh <-chan T, opt *ImExOption[T]) (io.Reader, string, error) {

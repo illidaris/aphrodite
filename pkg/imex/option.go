@@ -1,16 +1,21 @@
 package imex
 
-import "github.com/illidaris/aphrodite/pkg/convert/table2struct"
+import (
+	"github.com/illidaris/aphrodite/pkg/convert/table2struct"
+	group "github.com/illidaris/aphrodite/pkg/group/v2"
+)
 
 func NewImExOption[T any]() *ImExOption[T] {
 	return &ImExOption[T]{
 		Table2StructOptions: make([]table2struct.Table2StructOptionFunc, 0),
+		GroupOptions:        make([]group.Option, 0),
 		Iterates:            make([]func(item *T), 0),
 	}
 }
 
 type ImExOption[T any] struct {
 	Table2StructOptions []table2struct.Table2StructOptionFunc
+	GroupOptions        []group.Option
 	Iterates            []func(item *T)
 	ExportName          string
 	Deep                bool
@@ -38,6 +43,15 @@ func WithTable2StructOptions[T any](fs ...table2struct.Table2StructOptionFunc) I
 			opt.Table2StructOptions = make([]table2struct.Table2StructOptionFunc, 0)
 		}
 		opt.Table2StructOptions = append(opt.Table2StructOptions, fs...)
+	}
+}
+
+func WithGroupOptions[T any](fs ...group.Option) ImExOptionFunc[T] {
+	return func(opt *ImExOption[T]) {
+		if opt.GroupOptions == nil {
+			opt.GroupOptions = make([]group.Option, 0)
+		}
+		opt.GroupOptions = append(opt.GroupOptions, fs...)
 	}
 }
 
