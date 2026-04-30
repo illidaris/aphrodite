@@ -33,13 +33,12 @@ func group[T any](srcs []T, opt *options) [][]T {
 	}
 
 	// 按批次切割原切片并收集非空分组
-	for i := 0; i < gCount; i++ {
-		beg := i * batch
-		end := beg + batch
+	for i := 0; i < total; i += batch {
+		end := i + batch
 		if end > total {
 			end = total
 		}
-		gp := srcs[beg:end]
+		gp := srcs[i:end]
 		if len(gp) > 0 {
 			groups = append(groups, gp)
 		}
