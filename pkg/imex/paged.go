@@ -2,6 +2,7 @@ package imex
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	group "github.com/illidaris/aphrodite/pkg/group/v2"
@@ -42,7 +43,7 @@ func basePaged[Req dependency.IPage, Resp dependency.IPaginator, Item any](
 		}()
 		defer func() {
 			if r := recover(); r != nil {
-				println(r)
+				println(fmt.Sprintf("%v", r))
 			}
 		}()
 		for _, v := range getItemFunc(firstResp) {

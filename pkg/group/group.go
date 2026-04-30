@@ -34,17 +34,12 @@ func Group[T any](batch int, p ...*T) [][]*T {
 	if p == nil || total == 0 {
 		return groups
 	}
-	gCount := Count[T](batch, p...)
-	if gCount == 0 {
-		return groups
-	}
-	for i := 0; i < gCount; i++ {
-		beg := i * batch
-		end := beg + batch
+	for i := 0; i < total; i += batch {
+		end := i + batch
 		if end > total {
 			end = total
 		}
-		gp := p[beg:end]
+		gp := p[i:end]
 		if len(gp) > 0 {
 			groups = append(groups, gp)
 		}
