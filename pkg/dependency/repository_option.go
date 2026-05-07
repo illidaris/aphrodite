@@ -2,6 +2,7 @@ package dependency
 
 import (
 	"context"
+	"reflect"
 )
 
 const (
@@ -198,6 +199,9 @@ func WithIterativeFunc(v ...func(any)) BaseOptionFunc {
 
 func ShardingOptions(v any) []BaseOptionFunc {
 	opts := []BaseOptionFunc{}
+	if v == nil {
+		return opts
+	}
 	if v, ok := any(v).(IDbShardingCond); ok {
 		keys := v.GetDbShardingKeys()
 		if len(keys) > 0 {
@@ -208,6 +212,12 @@ func ShardingOptions(v any) []BaseOptionFunc {
 		keys := v.GetTbShardingKeys()
 		if len(keys) > 0 {
 			opts = append(opts, WithTbShardingKey(keys...))
+		}
+	}
+	if arr := reflect.TypeOf(v); arr.Kind() == reflect.Slice || arr.Kind() == reflect.Array {
+		keys, ok := v.([]any)
+		if ok && len(keys) > 0 {
+			opts = append(opts, WithDbShardingKey(keys...))
 		}
 	}
 	return opts
