@@ -36,15 +36,15 @@ func Create[T dependency.IEntity](repo dependency.IRepository[T], iterater func(
 	}
 }
 
-func DetailByIdFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, req any, id int64) (*T, exception.Exception) {
-	return func(ctx context.Context, req any, id int64) (*T, exception.Exception) {
-		return BaseDetailFunc(repo, opts...)(ctx, req, "`id` = ?", id)
+func DetailByIdFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, db, tb []any, id int64) (*T, exception.Exception) {
+	return func(ctx context.Context, db, tb []any, id int64) (*T, exception.Exception) {
+		return DetailByAnyFunc(repo, opts...)(ctx, db, tb, "`id` = ?", id)
 	}
 }
 
-func DetailByCodeFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, req any, code string) (*T, exception.Exception) {
-	return func(ctx context.Context, req any, code string) (*T, exception.Exception) {
-		return BaseDetailFunc(repo, opts...)(ctx, req, "`code` = ?", code)
+func DetailByCodeFunc[T dependency.IEntity](repo dependency.IRepository[T], opts ...Option) func(ctx context.Context, db, tb []any, code string) (*T, exception.Exception) {
+	return func(ctx context.Context, db, tb []any, code string) (*T, exception.Exception) {
+		return DetailByAnyFunc(repo, opts...)(ctx, db, tb, "`code` = ?", code)
 	}
 }
 
