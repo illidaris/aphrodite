@@ -52,19 +52,19 @@ func (l *Logger) DebugFunc(opts ...Option) func(ctx context.Context, msg string,
 
 func (l *Logger) InfoFunc(opts ...Option) func(ctx context.Context, msg string, args ...any) {
 	return func(ctx context.Context, msg string, args ...any) {
-		l.Log(ctx, opts, l.log.Debug, msg, args...)
+		l.Log(ctx, opts, l.log.Info, msg, args...)
 	}
 }
 
 func (l *Logger) WarnFunc(opts ...Option) func(ctx context.Context, msg string, args ...any) {
 	return func(ctx context.Context, msg string, args ...any) {
-		l.Log(ctx, opts, l.log.Debug, msg, args...)
+		l.Log(ctx, opts, l.log.Warn, msg, args...)
 	}
 }
 
 func (l *Logger) ErrorFunc(opts ...Option) func(ctx context.Context, msg string, args ...any) {
 	return func(ctx context.Context, msg string, args ...any) {
-		l.Log(ctx, opts, l.log.Debug, msg, args...)
+		l.Log(ctx, opts, l.log.Error, msg, args...)
 	}
 }
 
