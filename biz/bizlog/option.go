@@ -36,8 +36,12 @@ func (o *Options) Fields() []zapcore.Field {
 		zap.String("ibzl_name", o.Name),
 		zap.Int64("ibzl_bizid", o.BizId),
 		zap.String("ibzl_system", o.System),
+		zap.Int32("ibzl_cgy", o.Category),
+		zap.Int64("ibzl_action", o.Action),
+		zap.String("ibzl_msg", o.Message),
 		zap.Strings("ibzl_tags", o.Tags),
 		zap.Int64("ibzl_opat", o.OpAt),
+		zap.Int64("ibzl_createat", o.CreateAt),
 	}
 }
 
@@ -80,6 +84,20 @@ func WithBizId(bizId int64) Option {
 func WithSystem(system string) Option {
 	return func(o *Options) {
 		o.System = system
+	}
+}
+
+// WithCategory 设置大类
+func WithCategory(category int32) Option {
+	return func(o *Options) {
+		o.Category = category
+	}
+}
+
+// WithAction 设置行为
+func WithAction(action int64) Option {
+	return func(o *Options) {
+		o.Action = action
 	}
 }
 

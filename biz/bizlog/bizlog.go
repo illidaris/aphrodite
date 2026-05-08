@@ -19,6 +19,8 @@ type Entry struct {
 	Name     string   `json:"ibzl_name,omitempty"`     // 【WHO】主角名
 	BizId    int64    `json:"ibzl_bizid,omitempty"`    // 【WHERE】业务Id
 	System   string   `json:"ibzl_system,omitempty"`   // 【WHERE】所属系统
+	Category int32    `json:"ibzl_cgy,omitempty"`      // 大类
+	Action   int64    `json:"ibzl_action,omitempty"`   // 行为
 	Message  string   `json:"ibzl_msg,omitempty"`      // 【WHAT】什么事
 	Tags     []string `json:"ibzl_tags,omitempty"`     // 标签
 	OpAt     int64    `json:"ibzl_opat,omitempty"`     // 【WHEN】发生时间点
