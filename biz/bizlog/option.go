@@ -8,6 +8,10 @@ import (
 // OptionFunc 用于配置 Options 的函数选项类型
 type Option func(*Options)
 
+type Category int32
+
+type Action int64
+
 func NewOptions() *Options {
 	return &Options{
 		Entry: Entry{
@@ -88,16 +92,16 @@ func WithSystem(system string) Option {
 }
 
 // WithCategory 设置大类
-func WithCategory(category int32) Option {
+func WithCategory(category Category) Option {
 	return func(o *Options) {
-		o.Category = category
+		o.Category = int32(category)
 	}
 }
 
 // WithAction 设置行为
-func WithAction(action int64) Option {
+func WithAction(action Action) Option {
 	return func(o *Options) {
-		o.Action = action
+		o.Action = int64(action)
 	}
 }
 
