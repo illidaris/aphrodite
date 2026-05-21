@@ -3,12 +3,13 @@ package event
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/illidaris/aphrodite/component/gormex"
+	"github.com/illidaris/aphrodite/pkg/contextex"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/po"
-	"github.com/illidaris/core"
 )
 
 var _ = dependency.IUnitOfWork(EventTransactionImpl{})
@@ -41,7 +42,12 @@ func (t EventTransactionImpl) Execute(ctx context.Context, fs ...dependency.DbAc
 	}
 	err = publish(ctx, ent.GetTopic(), string(ent.GetKey()), ent.GetValue())
 	go func(e *po.MqMessage, publishErr error) {
-		newCtx := core.TraceID.SetString(context.Background(), e.TraceId)
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("%v", r)
+			}
+		}()
+		newCtx := contextex.TransferBackground(ctx)
 		if publishErr != nil {
 			updateE := &po.MqMessage{}
 			updateE.Id = e.Id
