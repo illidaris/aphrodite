@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/illidaris/logger"
+	"go.uber.org/zap"
 )
 
 type ParamMiddlewareOption func(opt *paramMiddlewareOptions)
@@ -51,11 +53,14 @@ func ParamMiddleware(opts ...ParamMiddlewareOption) gin.HandlerFunc {
 		f(opt)
 	}
 	return func(c *gin.Context) {
+		now := time.Now()
 		// max > 0  enable log response
 		if opt.RequestContentLengthMax > 0 {
 			if c.Request.ContentLength < int64(opt.RequestContentLengthMax) && c.ContentType() != binding.MIMEMultipartPOSTForm {
 				bodyBytes, _ := io.ReadAll(c.Request.Body)
-				logger.InfoCtx(c.Request.Context(), "[Request]"+string(bodyBytes))
+				if len(bodyBytes) > 0 {
+					logger.InfoCtx(c.Request.Context(), "[Request]"+string(bodyBytes))
+				}
 				_ = c.Request.Body.Close() //  must close
 				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 			} else {
@@ -67,13 +72,18 @@ func ParamMiddleware(opts ...ParamMiddlewareOption) gin.HandlerFunc {
 			w := &bodyLogWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
 			c.Writer = w
 			c.Next()
+
+			cost := time.Since(now)
+			costField := zap.Int64("cost", cost.Milliseconds()) // 记录耗时，单位毫秒
 			l := w.body.Len()
 			if l < int(opt.ResponseContentLengthMax) {
 				responseBody := w.body.String()
-				logger.InfoCtx(c.Request.Context(), "[Response]"+responseBody)
+				logger.InfoCtx(c.Request.Context(), "[Response]"+responseBody, costField)
 			} else {
-				logger.InfoCtx(c.Request.Context(), fmt.Sprintf("response %d is too long", l))
+				logger.InfoCtx(c.Request.Context(), fmt.Sprintf("response %d is too long", l), costField)
 			}
+		} else {
+			c.Next()
 		}
 	}
 }
