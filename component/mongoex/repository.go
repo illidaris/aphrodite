@@ -9,6 +9,7 @@ import (
 	"github.com/illidaris/aphrodite/pkg/convert"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/group"
+	"github.com/illidaris/core"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -202,7 +203,10 @@ func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, t *T, opt *depen
 		now := time.Now()
 		err := colcallback(colls)
 		cost := time.Since(now)
-		Log(ctx, fmt.Sprintf("elapsed:%dms,table:%s,err:%v", cost.Milliseconds(), opt.TableName, err), zap.InfoLevel)
+		Log(ctx, fmt.Sprintf("elapsed:%dms,table:%s,err:%v", cost.Milliseconds(), opt.TableName, err),
+			zap.InfoLevel,
+			zap.Int64(string(core.Duration), cost.Milliseconds()),
+		)
 		return err
 	})
 }

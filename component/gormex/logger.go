@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/illidaris/aphrodite/pkg/logex"
+	"github.com/illidaris/core"
 	iLog "github.com/illidaris/logger"
 	"go.uber.org/zap"
 	"gorm.io/gorm/logger"
@@ -125,20 +126,27 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql 
 	}
 	elapsed := time.Since(begin)
 	sql, rows := fc()
+
+	lvl := iLog.InfoLevel
+	sqlMsgFmt := SqlLogFormat
+
 	switch {
 	case err != nil && l.LogLevel >= logger.Error && (!errors.Is(err, logger.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError):
-		l.Error(ctx, SqlLogFormat, elapsed.Milliseconds(), rows, err, sql)
+		lvl = iLog.ErrorLevel
 	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.LogLevel >= logger.Warn:
-		l.Warn(ctx, "[SLOW]"+SqlLogFormat, elapsed.Milliseconds(), rows, err, sql)
+		lvl = iLog.WarnLevel
+		sqlMsgFmt = "[SLOW]" + SqlLogFormat
 	case l.LogLevel == logger.Info:
 		if l.IgnoreNoAffect && err == nil && rows == 0 {
 			return
 		}
-		l.Info(ctx, SqlLogFormat, elapsed.Milliseconds(), rows, err, sql)
 	}
+	Log(ctx, lvl, fmt.Sprintf(sqlMsgFmt, elapsed.Milliseconds(), rows, err, sql),
+		zap.Int64(string(core.Duration), elapsed.Milliseconds()),
+	)
 }
 
 // Log 记录指定级别的日志消息。
-func Log(ctx context.Context, lvl iLog.Level, msg string) {
-	iLog.LogFrmCtx(ctx, getLevel(logger.Info), msg, logex.FieldsFromCtx(ctx)...)
+func Log(ctx context.Context, lvl iLog.Level, msg string, fields ...zap.Field) {
+	iLog.LogFrmCtx(ctx, getLevel(logger.Info), msg, append(logex.FieldsFromCtx(ctx), fields...)...)
 }
