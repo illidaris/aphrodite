@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/illidaris/logger"
-	"go.uber.org/zap"
 )
 
 type ParamMiddlewareOption func(opt *paramMiddlewareOptions)
@@ -17,6 +17,7 @@ type ParamMiddlewareOption func(opt *paramMiddlewareOptions)
 type paramMiddlewareOptions struct {
 	RequestContentLengthMax  uint64
 	ResponseContentLengthMax uint64
+	AfterFunc                func(ctx context.Context, info *APIInfo)
 }
 
 func WithRequestContentLengthMax(max uint64) ParamMiddlewareOption {
@@ -28,6 +29,12 @@ func WithRequestContentLengthMax(max uint64) ParamMiddlewareOption {
 func WithResponseContentLengthMax(max uint64) ParamMiddlewareOption {
 	return func(opt *paramMiddlewareOptions) {
 		opt.ResponseContentLengthMax = max
+	}
+}
+
+func WithAfterFunc(f func(ctx context.Context, info *APIInfo)) ParamMiddlewareOption {
+	return func(opt *paramMiddlewareOptions) {
+		opt.AfterFunc = f
 	}
 }
 
@@ -72,18 +79,26 @@ func ParamMiddleware(opts ...ParamMiddlewareOption) gin.HandlerFunc {
 			w := &bodyLogWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
 			c.Writer = w
 			c.Next()
-
-			cost := time.Since(now)
-			costField := zap.Int64("cost", cost.Milliseconds()) // 记录耗时，单位毫秒
 			l := w.body.Len()
 			if l < int(opt.ResponseContentLengthMax) {
 				responseBody := w.body.String()
-				logger.InfoCtx(c.Request.Context(), "[Response]"+responseBody, costField)
+				logger.InfoCtx(c.Request.Context(), "[Response]"+responseBody)
 			} else {
-				logger.InfoCtx(c.Request.Context(), fmt.Sprintf("response %d is too long", l), costField)
+				logger.InfoCtx(c.Request.Context(), fmt.Sprintf("response %d is too long", l))
 			}
 		} else {
 			c.Next()
+		}
+		cost := time.Since(now)
+		if opt.AfterFunc != nil {
+			opt.AfterFunc(c.Request.Context(), &APIInfo{
+				Method: c.Request.Method,
+				Path:   c.Request.URL.Path,
+				Cost:   cost.Milliseconds(),
+				Status: c.Writer.Status(),
+				Query:  c.Request.URL.RawQuery,
+				IP:     c.ClientIP(),
+			})
 		}
 	}
 }

@@ -8,6 +8,15 @@ import (
 	acContextex "github.com/illidaris/aphrodite/pkg/contextex"
 )
 
+type APIInfo struct {
+	Method string
+	Path   string
+	Cost   int64
+	Status int
+	Query  string
+	IP     string
+}
+
 func APIMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -30,9 +39,6 @@ func CorsMiddleware(origins ...string) gin.HandlerFunc {
 			"X-CSRF-Token", "Authorization", "X-Requested-With", "Cache-Control"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			return origin == "https://github.com"
-		},
-		MaxAge: 12 * time.Hour,
+		MaxAge:           12 * time.Hour,
 	})
 }
