@@ -43,6 +43,9 @@ func (l *Logger) Error(err error, message string, _ ...interface{}) {
 	Log(context.TODO(), fmt.Sprintf("mongo_err %s, err: %v", message, err), zapcore.ErrorLevel)
 }
 
-func Log(ctx context.Context, msg string, lvl zapcore.Level) {
-	l.Log(lvl, msg, logex.FieldsFromCtx(ctx)...)
+func Log(ctx context.Context, msg string, lvl zapcore.Level, fields ...zap.Field) {
+	if l == nil {
+		return
+	}
+	l.Log(lvl, msg, append(logex.FieldsFromCtx(ctx), fields...)...)
 }

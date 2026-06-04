@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/illidaris/aphrodite/pkg/convert"
 	"github.com/illidaris/aphrodite/pkg/dependency"
@@ -11,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 )
 
 var _ = dependency.IEntityRepository[dependency.IEntity](&BaseRepository[dependency.IEntity]{})
@@ -196,7 +198,12 @@ func (r *BaseRepository[T]) BuildFrmOption(ctx context.Context, t *T, opt *depen
 		if opt.TableName != "" {
 			colls = db.Collection(opt.TableName)
 		}
-		return colcallback(colls)
+
+		now := time.Now()
+		err := colcallback(colls)
+		cost := time.Since(now)
+		Log(ctx, fmt.Sprintf("elapsed:%dms,table:%s,err:%v", cost.Milliseconds(), opt.TableName, err), zap.InfoLevel)
+		return err
 	})
 }
 
