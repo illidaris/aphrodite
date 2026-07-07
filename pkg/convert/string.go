@@ -14,7 +14,7 @@ func Json(data interface{}) string {
 	return string(b)
 }
 
-// TruncateMySQLVarchar 按 MySQL utf8mb4 存储字节长度截断字符串。
+// TruncateMySQLVarchar 存储字节长度截断字符串。
 func TruncateMySQLVarchar(raw string, length int) string {
 	if length <= 0 || raw == "" {
 		return ""
