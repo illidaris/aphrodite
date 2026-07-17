@@ -25,6 +25,9 @@ var DetCgyMap = map[string]FileCategory{
 	"audio/midi":       FileCategoryAudio,
 	"audio/wave":       FileCategoryAudio,
 	"application/wasm": FileCategoryWasm,
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": FileCategoryExcel,
+	"application/vnd.ms-excel": FileCategoryExcel,
+	"text/csv":                 FileCategoryCSV,
 }
 
 // GetFileCategoryByExt returns the FileCategory for a given file extension.
@@ -52,4 +55,7 @@ var ExtCgyMap = map[string]FileCategory{
 	"midi": FileCategoryAudio,
 	"wav":  FileCategoryAudio,
 	"wasm": FileCategoryWasm,
+	"xlsx": FileCategoryExcel,
+	"xls":  FileCategoryExcel,
+	"csv":  FileCategoryCSV,
 }

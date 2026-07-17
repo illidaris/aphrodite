@@ -19,6 +19,8 @@ const (
 	FileCategoryVideo
 	FileCategoryAudio
 	FileCategoryWasm
+	FileCategoryExcel
+	FileCategoryCSV
 )
 
 // The Ok function determines whether the given file path belongs to the specified file category.
