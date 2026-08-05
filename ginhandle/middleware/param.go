@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/illidaris/aphrodite/pkg/contextex"
 	"github.com/illidaris/logger"
 )
 
@@ -18,6 +19,10 @@ type paramMiddlewareOptions struct {
 	RequestContentLengthMax  uint64
 	ResponseContentLengthMax uint64
 	AfterFunc                func(ctx context.Context, info *APIInfo)
+}
+
+func (o *paramMiddlewareOptions) CanLog(ctx context.Context) bool {
+	return !contextex.IsLogIgnoreFrmCtx(ctx)
 }
 
 func WithRequestContentLengthMax(max uint64) ParamMiddlewareOption {
@@ -61,8 +66,9 @@ func ParamMiddleware(opts ...ParamMiddlewareOption) gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		now := time.Now()
+		ctx := c.Request.Context()
 		// max > 0  enable log response
-		if opt.RequestContentLengthMax > 0 {
+		if opt.CanLog(ctx) && opt.RequestContentLengthMax > 0 {
 			if c.Request.ContentLength < int64(opt.RequestContentLengthMax) && c.ContentType() != binding.MIMEMultipartPOSTForm {
 				bodyBytes, _ := io.ReadAll(c.Request.Body)
 				if len(bodyBytes) > 0 {
@@ -75,7 +81,7 @@ func ParamMiddleware(opts ...ParamMiddlewareOption) gin.HandlerFunc {
 			}
 		}
 		// max > 0  enable log response
-		if opt.ResponseContentLengthMax > 0 {
+		if opt.CanLog(ctx) && opt.ResponseContentLengthMax > 0 {
 			w := &bodyLogWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
 			c.Writer = w
 			c.Next()
