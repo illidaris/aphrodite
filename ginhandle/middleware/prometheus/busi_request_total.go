@@ -16,10 +16,11 @@ const (
 type ctxKeyMetricsBizResponseCode struct{}
 
 func WithMetricsBizResponseCodeFrmEx(c *gin.Context, ex exception.Exception) *gin.Context {
-	if ex == nil {
-		return c
+	code := int64(0)
+	if ex != nil {
+		code = int64(ex.Code())
 	}
-	c.Request = c.Request.WithContext(WithMetricsBizResponseCode(c.Request.Context(), int64(ex.Code())))
+	c.Request = c.Request.WithContext(WithMetricsBizResponseCode(c.Request.Context(), code))
 	return c
 }
 
@@ -43,9 +44,9 @@ var (
 	BizRequestTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: METRICS_BIZ_REQUEST_TOTAL,
-			Help: "Total number of HTTP requests, with business code",
+			Help: "Total number of HTTP requests, with biz code",
 		},
-		[]string{"handler", "host", "method", "url", "business_code"},
+		[]string{"handler", "host", "method", "url", "biz_code"},
 	)
 )
 
