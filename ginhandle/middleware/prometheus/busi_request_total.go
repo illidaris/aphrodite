@@ -40,7 +40,7 @@ func GetMetricsBizResponseCode(ctx context.Context) (bool, int64) {
 }
 
 var (
-	ginRequestsTotal = prometheus.NewCounterVec(
+	BizRequestTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: METRICS_BIZ_REQUEST_TOTAL,
 			Help: "Total number of HTTP requests, with business code",
@@ -64,7 +64,7 @@ func BizRequestTotalPrometheusMiddleware(fn RequestCounterURLLabelMappingFn) gin
 			return
 		}
 		// 记录计数
-		ginRequestsTotal.WithLabelValues(
+		BizRequestTotal.WithLabelValues(
 			handler,
 			host,
 			method,

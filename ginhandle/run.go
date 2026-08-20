@@ -136,7 +136,12 @@ func NewGin(opts ...GinHandleOption) *gin.Engine {
 		prometheus.DefaultRegisterer = reg
 		prometheus.DefaultGatherer = reg
 		if len(opt.Collectors) > 0 {
-			reg.MustRegister(opt.Collectors...)
+			// 内置
+			collectors := []prometheus.Collector{
+				prometheusEx.BizRequestTotal,
+			}
+			collectors = append(collectors, opt.Collectors...)
+			reg.MustRegister(collectors...)
 		}
 		p := prometheusEx.NewWithConfig(opt.PrometheusConfig)
 		if opt.ReqCntURLLabelMappingFn != nil {
