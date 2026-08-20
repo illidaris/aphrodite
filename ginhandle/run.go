@@ -20,14 +20,16 @@ import (
 
 // GinHandleOptions 运行参数
 type GinHandleOptions struct {
-	Mode                string
-	Collectors          []prometheus.Collector
-	ParamMiddleware     bool
-	ParamMiddlewareOpts []middleware.ParamMiddlewareOption
-	HealthCheck         bool
-	MetricCheck         bool
-	PrometheusConfig    prometheusEx.Config
-	GinInnerHandle      func(*gin.Engine)
+	Mode                    string
+	Collectors              []prometheus.Collector
+	ParamMiddleware         bool
+	ParamMiddlewareOpts     []middleware.ParamMiddlewareOption
+	HealthCheck             bool
+	MetricCheck             bool
+	PrometheusConfig        prometheusEx.Config
+	GinInnerHandle          func(*gin.Engine)
+	ReqCntURLLabelMappingFn prometheusEx.RequestCounterURLLabelMappingFn
+	URLLabelFromContext     string
 }
 
 // Gin模式
@@ -48,6 +50,20 @@ func WithHealthCheck(v bool) GinHandleOption {
 func WithMetricCheck(v bool) GinHandleOption {
 	return func(opts *GinHandleOptions) {
 		opts.MetricCheck = v
+	}
+}
+
+// 标签映射URL标签关系
+func WithMetricReqCntURLLabelMappingFn(v prometheusEx.RequestCounterURLLabelMappingFn) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.ReqCntURLLabelMappingFn = v
+	}
+}
+
+// 从上下文中获取URL标签
+func WithMetricURLLabelFromContext(v string) GinHandleOption {
+	return func(opts *GinHandleOptions) {
+		opts.URLLabelFromContext = v
 	}
 }
 
@@ -122,6 +138,12 @@ func NewGin(opts ...GinHandleOption) *gin.Engine {
 			reg.MustRegister(opt.Collectors...)
 		}
 		p := prometheusEx.NewWithConfig(opt.PrometheusConfig)
+		if opt.ReqCntURLLabelMappingFn != nil {
+			p.ReqCntURLLabelMappingFn = opt.ReqCntURLLabelMappingFn
+		}
+		if opt.URLLabelFromContext != "" {
+			p.URLLabelFromContext = opt.URLLabelFromContext
+		}
 		p.Use(engine)
 	}
 	if opt.ParamMiddleware {
