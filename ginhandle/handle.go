@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/illidaris/aphrodite/dto"
+	"github.com/illidaris/aphrodite/ginhandle/middleware/prometheus"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/exception"
 )
@@ -31,6 +32,7 @@ func BizGinExHandler[Req dependency.IBindRequest, Resp any](request Req, exec fu
 		dependency.BizFrmCtx(ctx, request)
 		dependency.IPFrmCtx(ctx, request)
 		res, ex := exec(ctx, request)
+		_ = prometheus.WithMetricsBizResponseCodeFrmEx(c, ex)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
 }
@@ -53,6 +55,7 @@ func GinOneHandler[Req, Resp any](exec func(context.Context, *Req) (Resp, except
 			return
 		}
 		res, ex := exec(ctx, request)
+		_ = prometheus.WithMetricsBizResponseCodeFrmEx(c, ex)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
 }
@@ -83,6 +86,7 @@ func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) 
 			}
 		}
 		res, ex := exec(ctx, request)
+		_ = prometheus.WithMetricsBizResponseCodeFrmEx(c, ex)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
 }

@@ -122,6 +122,7 @@ func NewGin(opts ...GinHandleOption) *gin.Engine {
 		middleware.LoggerHandler(),
 		middleware.RecoverHandler(),
 		middleware.APIMiddleware(),
+		prometheusEx.BizRequestTotalPrometheusMiddleware(opt.ReqCntURLLabelMappingFn),
 	)
 	if opt.HealthCheck {
 		engine.HEAD("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
