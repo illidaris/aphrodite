@@ -1,11 +1,15 @@
 package middleware
 
 import (
+	"net/http"
 	"time"
 
 	libCORS "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/illidaris/aphrodite/dto"
+	"github.com/illidaris/aphrodite/ginhandle/middleware/prometheus"
 	acContextex "github.com/illidaris/aphrodite/pkg/contextex"
+	"github.com/illidaris/aphrodite/pkg/exception"
 )
 
 type APIInfo struct {
@@ -41,4 +45,9 @@ func CorsMiddleware(origins ...string) gin.HandlerFunc {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	})
+}
+
+func AbortWithException(c *gin.Context, code prometheus.BizCode, ex exception.Exception) {
+	prometheus.WithMetricsBizCode(c, code, ex)
+	c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, ex))
 }

@@ -393,6 +393,7 @@ func NewMetric(m *Metric, subsystem string) prometheus.Collector {
 				Subsystem: subsystem,
 				Name:      m.Name,
 				Help:      m.Description,
+				Buckets:   []float64{0.1, 0.5, 1, 5, 10},
 			},
 			m.Args,
 		)
@@ -402,6 +403,7 @@ func NewMetric(m *Metric, subsystem string) prometheus.Collector {
 				Subsystem: subsystem,
 				Name:      m.Name,
 				Help:      m.Description,
+				Buckets:   []float64{0.1, 0.5, 1, 5, 10},
 			},
 		)
 	case "summary_vec":

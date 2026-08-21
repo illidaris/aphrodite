@@ -13,6 +13,7 @@ type BizCode string
 const (
 	METRICS_BIZ_REQUEST_TOTAL         = "biz_request_total"
 	BIZ_CODE_ILLEGAL          BizCode = "Illegal"
+	BIZ_CODE_EXPIRED          BizCode = "Expired"
 	BIZ_CODE_BADPARAM         BizCode = "BadParam"
 	BIZ_CODE_BUSI             BizCode = "Busi"
 	BIZ_CODE_SUCCESS          BizCode = "Success"
@@ -37,6 +38,7 @@ func WithMetricsBizResponseCode(ctx context.Context, code BizCode) context.Conte
 	val := BIZ_CODE_UNKNOWN
 	switch code {
 	case BIZ_CODE_ILLEGAL,
+		BIZ_CODE_EXPIRED,
 		BIZ_CODE_BADPARAM,
 		BIZ_CODE_BUSI,
 		BIZ_CODE_SUCCESS:

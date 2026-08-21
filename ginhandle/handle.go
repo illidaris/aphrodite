@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/illidaris/aphrodite/dto"
+	"github.com/illidaris/aphrodite/ginhandle/middleware"
 	"github.com/illidaris/aphrodite/ginhandle/middleware/prometheus"
 	"github.com/illidaris/aphrodite/pkg/dependency"
 	"github.com/illidaris/aphrodite/pkg/exception"
@@ -16,12 +17,12 @@ func BizGinExHandler[Req dependency.IBindRequest, Resp any](request Req, exec fu
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if exec == nil {
-			abortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
+			middleware.AbortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
 			return
 		}
 		if any(request) != nil {
 			if ex := bindRequest(c, request); ex != nil {
-				abortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
+				middleware.AbortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
 				return
 			}
 		}
@@ -39,11 +40,11 @@ func GinOneHandler[Req, Resp any](exec func(context.Context, *Req) (Resp, except
 		request := new(Req)
 		ctx := c.Request.Context()
 		if exec == nil {
-			abortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
+			middleware.AbortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
 			return
 		}
 		if ex := bindRequest(c, request); ex != nil {
-			abortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
+			middleware.AbortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
 			return
 		}
 		res, ex := exec(ctx, request)
@@ -57,19 +58,19 @@ func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) 
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if exec == nil {
-			abortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
+			middleware.AbortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
 			return
 		}
 		if request != nil {
 			if ex := bindRequest(c, request); ex != nil {
-				abortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
+				middleware.AbortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
 				return
 			}
 		}
 		for _, f := range reqFuncs {
 			ex := f(ctx, request)
 			if ex != nil {
-				abortWithException(c, prometheus.BIZ_CODE_BUSI, ex)
+				middleware.AbortWithException(c, prometheus.BIZ_CODE_BUSI, ex)
 				return
 			}
 		}
@@ -84,7 +85,7 @@ func GinHandler[Req, Resp any](request Req, f func(context.Context, Req) (Resp, 
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if ex := bindRequest(c, request); ex != nil {
-			abortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
+			middleware.AbortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
 			return
 		}
 		res, ex := f(ctx, request)
@@ -101,9 +102,4 @@ func bindRequest(c *gin.Context, request any) exception.Exception {
 		return exception.ERR_COMMON_BADPARAM.Wrap(err)
 	}
 	return nil
-}
-
-func abortWithException(c *gin.Context, code prometheus.BizCode, ex exception.Exception) {
-	prometheus.WithMetricsBizCode(c, code, ex)
-	c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, ex))
 }

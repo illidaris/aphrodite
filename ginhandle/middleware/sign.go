@@ -3,11 +3,10 @@ package middleware
 import (
 	"context"
 	"crypto/sha256"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/illidaris/aphrodite/dto"
+	"github.com/illidaris/aphrodite/ginhandle/middleware/prometheus"
 	"github.com/illidaris/aphrodite/pkg/exception"
 	"github.com/illidaris/rest/signature"
 
@@ -26,11 +25,11 @@ func WebSignMiddleware(sopts ...WebsignOption) gin.HandlerFunc {
 		if !opts.Skip(ctx) {
 			secret := opts.SecretFunc(ctx, app)
 			if secret == "" {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_APP.New("应用访问被拒绝")))
+				AbortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_COMMON_SIGN_APP.New("应用访问被拒绝"))
 				return
 			}
 			if !opts.AllowVerFunc(ctx, ver) {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_VER.New("签名版本失效")))
+				AbortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_COMMON_SIGN_VER.New("签名版本失效"))
 				return
 			}
 			timeout := opts.TimeoutFunc(ctx)
@@ -38,7 +37,7 @@ func WebSignMiddleware(sopts ...WebsignOption) gin.HandlerFunc {
 			beg := now.Add(-1 * timeout)
 			end := now.Add(timeout)
 			if ts := cast.ToInt64(tsStr); beg.Unix() > ts || end.Unix() < ts {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_SIGN_EXPIRED.New("签名已过期")))
+				AbortWithException(c, prometheus.BIZ_CODE_EXPIRED, exception.ERR_COMMON_SIGN_EXPIRED.New("签名已过期"))
 				return
 			}
 			realOpts := []signature.OptionFunc{
@@ -51,7 +50,7 @@ func WebSignMiddleware(sopts ...WebsignOption) gin.HandlerFunc {
 			realOpts = append(realOpts, opts.RestOptions...)
 			err := signature.VerifySign(c.Request, realOpts...)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+				AbortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_COMMON_BADPARAM.Wrap(err))
 				return
 			}
 		}
