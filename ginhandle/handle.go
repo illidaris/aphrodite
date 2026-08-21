@@ -16,23 +16,19 @@ func BizGinExHandler[Req dependency.IBindRequest, Resp any](request Req, exec fu
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if exec == nil {
-			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_BUSI.New("当前业务尚未启用")))
+			abortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
 			return
 		}
 		if any(request) != nil {
-			if err := c.ShouldBind(request); err != nil {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
-				return
-			}
-			if err := c.ShouldBindUri(request); err != nil {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+			if ex := bindRequest(c, request); ex != nil {
+				abortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
 				return
 			}
 		}
 		dependency.BizFrmCtx(ctx, request)
 		dependency.IPFrmCtx(ctx, request)
 		res, ex := exec(ctx, request)
-		_ = prometheus.WithMetricsBizResponseCodeFrmEx(c, ex)
+		prometheus.WithMetricsBizCode(c, prometheus.BIZ_CODE_BUSI, ex)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
 }
@@ -43,19 +39,15 @@ func GinOneHandler[Req, Resp any](exec func(context.Context, *Req) (Resp, except
 		request := new(Req)
 		ctx := c.Request.Context()
 		if exec == nil {
-			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_BUSI.New("当前业务尚未启用")))
+			abortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
 			return
 		}
-		if err := c.ShouldBind(request); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
-			return
-		}
-		if err := c.ShouldBindUri(request); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+		if ex := bindRequest(c, request); ex != nil {
+			abortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
 			return
 		}
 		res, ex := exec(ctx, request)
-		_ = prometheus.WithMetricsBizResponseCodeFrmEx(c, ex)
+		prometheus.WithMetricsBizCode(c, prometheus.BIZ_CODE_BUSI, ex)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
 }
@@ -65,28 +57,24 @@ func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) 
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if exec == nil {
-			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_BUSI.New("当前业务尚未启用")))
+			abortWithException(c, prometheus.BIZ_CODE_ILLEGAL, exception.ERR_BUSI.New("当前业务尚未启用"))
 			return
 		}
 		if request != nil {
-			if err := c.ShouldBind(request); err != nil {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
-				return
-			}
-			if err := c.ShouldBindUri(request); err != nil {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+			if ex := bindRequest(c, request); ex != nil {
+				abortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
 				return
 			}
 		}
 		for _, f := range reqFuncs {
 			ex := f(ctx, request)
 			if ex != nil {
-				c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, ex))
+				abortWithException(c, prometheus.BIZ_CODE_BUSI, ex)
 				return
 			}
 		}
 		res, ex := exec(ctx, request)
-		_ = prometheus.WithMetricsBizResponseCodeFrmEx(c, ex)
+		prometheus.WithMetricsBizCode(c, prometheus.BIZ_CODE_BUSI, ex)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
 }
@@ -95,16 +83,27 @@ func GinExHandler[Req, Resp any](request *Req, exec func(context.Context, *Req) 
 func GinHandler[Req, Resp any](request Req, f func(context.Context, Req) (Resp, exception.Exception)) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-		execFunc := f
-		if err := c.ShouldBind(request); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
+		if ex := bindRequest(c, request); ex != nil {
+			abortWithException(c, prometheus.BIZ_CODE_BADPARAM, ex)
 			return
 		}
-		if err := c.ShouldBindUri(request); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, exception.ERR_COMMON_BADPARAM.Wrap(err)))
-			return
-		}
-		res, ex := execFunc(ctx, request)
+		res, ex := f(ctx, request)
+		prometheus.WithMetricsBizCode(c, prometheus.BIZ_CODE_BUSI, ex)
 		c.JSON(http.StatusOK, dto.NewResponse(res, ex))
 	}
+}
+
+func bindRequest(c *gin.Context, request any) exception.Exception {
+	if err := c.ShouldBind(request); err != nil {
+		return exception.ERR_COMMON_BADPARAM.Wrap(err)
+	}
+	if err := c.ShouldBindUri(request); err != nil {
+		return exception.ERR_COMMON_BADPARAM.Wrap(err)
+	}
+	return nil
+}
+
+func abortWithException(c *gin.Context, code prometheus.BizCode, ex exception.Exception) {
+	prometheus.WithMetricsBizCode(c, code, ex)
+	c.AbortWithStatusJSON(http.StatusOK, dto.NewResponse(nil, ex))
 }

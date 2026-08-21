@@ -2,38 +2,55 @@ package prometheus
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/illidaris/aphrodite/pkg/exception"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+type BizCode string
+
 const (
-	METRICS_BIZ_REQUEST_TOTAL = "biz_request_total"
+	METRICS_BIZ_REQUEST_TOTAL         = "biz_request_total"
+	BIZ_CODE_ILLEGAL          BizCode = "Illegal"
+	BIZ_CODE_BADPARAM         BizCode = "BadParam"
+	BIZ_CODE_BUSI             BizCode = "Busi"
+	BIZ_CODE_SUCCESS          BizCode = "Success"
+	BIZ_CODE_UNKNOWN          BizCode = "Unknown"
 )
 
 type ctxKeyMetricsBizResponseCode struct{}
 
-func WithMetricsBizResponseCodeFrmEx(c *gin.Context, ex exception.Exception) *gin.Context {
-	code := int64(0)
-	if ex != nil {
-		code = int64(ex.Code())
+func WithMetricsBizCode(c *gin.Context, code BizCode, ex exception.Exception) *gin.Context {
+	if ex == nil {
+		if code == BIZ_CODE_BUSI {
+			code = BIZ_CODE_SUCCESS
+		} else {
+			return c
+		}
 	}
 	c.Request = c.Request.WithContext(WithMetricsBizResponseCode(c.Request.Context(), code))
 	return c
 }
 
-func WithMetricsBizResponseCode(ctx context.Context, code int64) context.Context {
-	return context.WithValue(ctx, ctxKeyMetricsBizResponseCode{}, code)
+func WithMetricsBizResponseCode(ctx context.Context, code BizCode) context.Context {
+	val := BIZ_CODE_UNKNOWN
+	switch code {
+	case BIZ_CODE_ILLEGAL,
+		BIZ_CODE_BADPARAM,
+		BIZ_CODE_BUSI,
+		BIZ_CODE_SUCCESS:
+		val = code
+	}
+	return context.WithValue(ctx, ctxKeyMetricsBizResponseCode{}, val)
 }
 
-func GetMetricsBizResponseCode(ctx context.Context) (bool, int64) {
+func GetMetricsBizResponseCode(ctx context.Context) (bool, BizCode) {
 	v := ctx.Value(ctxKeyMetricsBizResponseCode{})
 	if v == nil {
-		return false, 0
+		return false, ""
 	}
-	val, ok := v.(int64)
+	val, ok := v.(BizCode)
 	if !ok {
 		return false, val
 	}
@@ -70,7 +87,7 @@ func BizRequestTotalPrometheusMiddleware(fn RequestCounterURLLabelMappingFn) gin
 			host,
 			method,
 			url,
-			strconv.Itoa(int(bizCode)),
+			string(bizCode),
 		).Inc()
 	}
 }
