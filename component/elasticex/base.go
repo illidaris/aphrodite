@@ -24,6 +24,10 @@ func ParseHit[T dependency.IEntity](h *elastic.SearchHit) *T {
 	if err != nil {
 		return t
 	}
+	// 转化ID
+	if seter, ok := any(t).(dependency.ISetID); ok {
+		seter.SetID(h.Id)
+	}
 	return t
 }
 

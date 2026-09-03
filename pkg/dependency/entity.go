@@ -6,6 +6,10 @@ type IEntity interface {
 	IPo
 }
 
+type ISetID interface {
+	SetID(any)
+}
+
 type IBaseTask interface {
 	GetTimeout() time.Duration
 	GetBizId() uint64
