@@ -2,7 +2,10 @@ package canal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync/atomic"
 
 	pbe "github.com/withlin/canal-go/protocol/entry"
@@ -11,18 +14,62 @@ import (
 // ColsToKVsHandle 将 Canal 列集合转换为文档 ID 和文档字段。
 type ColsToKVsHandle func(columns []*pbe.Column) (string, map[string]any)
 
-// DefaultColsToDoc 使用列名作为字段名，并返回首个主键列的值作为文档 ID。
+// DefaultColsToDoc 使用列名作为字段名，根据 MySQL 字段类型转换字段值，
+// 并返回首个主键列的原始值作为文档 ID。
 func DefaultColsToDoc(columns []*pbe.Column) (string, map[string]any) {
 	doc := make(map[string]any, len(columns))
 	var id string
 	for _, column := range columns {
+		if column == nil {
+			continue
+		}
+
 		value := column.GetValue()
-		doc[column.GetName()] = value
+		doc[column.GetName()] = columnValue(column)
 		if column.GetIsKey() && id == "" {
 			id = value
 		}
 	}
 	return id, doc
+}
+
+func columnValue(column *pbe.Column) any {
+	if column.GetIsNull() {
+		return nil
+	}
+
+	value := column.GetValue()
+	mysqlType := strings.ToLower(strings.TrimSpace(column.GetMysqlType()))
+	baseType := mysqlType
+	if index := strings.IndexAny(baseType, "( "); index >= 0 {
+		baseType = baseType[:index]
+	}
+
+	switch baseType {
+	case "bool", "boolean":
+		if converted, err := strconv.ParseBool(value); err == nil {
+			return converted
+		}
+	case "tinyint", "smallint", "mediumint", "int", "integer", "bigint", "year", "bit":
+		if strings.Contains(mysqlType, "unsigned") {
+			if converted, err := strconv.ParseUint(value, 10, 64); err == nil {
+				return converted
+			}
+		} else if converted, err := strconv.ParseInt(value, 10, 64); err == nil {
+			return converted
+		}
+	case "float", "double", "real", "decimal", "numeric":
+		if converted, err := strconv.ParseFloat(value, 64); err == nil {
+			return converted
+		}
+	case "json":
+		var converted any
+		if err := json.Unmarshal([]byte(value), &converted); err == nil {
+			return converted
+		}
+	}
+
+	return value
 }
 
 var _ = ColsToKVsHandle(DefaultColsToDoc)
