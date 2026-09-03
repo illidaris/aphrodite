@@ -13,6 +13,11 @@ const (
 	MAX_WINDOW_SIZE = 10000
 )
 
+type ElasticHitRes[T dependency.IEntity] struct {
+	Source *elastic.SearchHit
+	Target *T
+}
+
 // ParseHit
 func ParseHit[T dependency.IEntity](h *elastic.SearchHit) *T {
 	t := new(T)
@@ -23,10 +28,6 @@ func ParseHit[T dependency.IEntity](h *elastic.SearchHit) *T {
 	err = json.Unmarshal(bs, t)
 	if err != nil {
 		return t
-	}
-	// 转化ID
-	if seter, ok := any(t).(dependency.ISetID); ok {
-		seter.SetID(h.Id)
 	}
 	return t
 }

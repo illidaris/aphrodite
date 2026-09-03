@@ -83,8 +83,11 @@ func (r *BaseRepository[T]) BaseQueryWithCount(ctx context.Context, opts ...depe
 			res = append(res, row)
 			sortValues = row.Sort
 			tPtr := ParseHit[T](row)
+			opt.Iterate(&ElasticHitRes[T]{
+				Source: row,
+				Target: tPtr,
+			})
 			ts = append(ts, *tPtr)
-			opt.Iterate(row)
 		}
 		return res, result.TotalHits(), err
 	})
