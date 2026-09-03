@@ -2,8 +2,6 @@ module github.com/illidaris/aphrodite
 
 go 1.24.8
 
-toolchain go1.24.8
-
 require (
 	dubbo.apache.org/dubbo-go/v3 v3.3.0
 	github.com/DATA-DOG/go-sqlmock v1.5.0
