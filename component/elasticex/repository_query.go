@@ -102,12 +102,13 @@ func (r *BaseRepository[T]) BaseSearch(ctx context.Context, opts ...dependency.B
 	if err != nil {
 		return nil, 0, err
 	}
-	for _, hit := range res.Hits.Hits {
-		var t T
-		if err := json.Unmarshal(hit.Source, &t); err == nil {
-			result = append(result, t)
-		}
-		opt.Iterate(hit)
+	for _, row := range res.Hits.Hits {
+		tPtr := ParseHit[T](row)
+		opt.Iterate(&ElasticHitRes[T]{
+			Source: row,
+			Target: tPtr,
+		})
+		result = append(result, *tPtr)
 	}
 	return result, res.TotalHits(), nil
 }
