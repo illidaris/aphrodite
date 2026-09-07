@@ -45,7 +45,7 @@ func TestDefaultColsToDoc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotID, gotDoc := DefaultColsToDoc(tt.cols)
+			gotID, gotDoc := ColsToDoc(nil)(tt.cols)
 			if gotID != tt.wantID {
 				t.Errorf("文档 ID = %q，期望 %q", gotID, tt.wantID)
 			}

@@ -54,3 +54,29 @@ func (i OperateStats) GetMsg(splitKey string) string {
 	}
 	return strings.Join(words, splitKey)
 }
+
+type MappingInfo struct {
+	Settings MappingSetting `json:"settings"`
+	Mappings MappingMap     `json:"mappings"`
+}
+
+func (m MappingInfo) ToFieldMap() map[string]string {
+	res := map[string]string{}
+	for k, val := range m.Mappings.Properties {
+		res[k] = val.Type
+	}
+	return res
+}
+
+type MappingSetting struct {
+	NumberOfShards   int32 `json:"number_of_shards"`
+	NumberOfReplicas int32 `json:"number_of_replicas"`
+}
+
+type MappingMap struct {
+	Properties map[string]MappingField `json:"properties"`
+}
+
+type MappingField struct {
+	Type string `json:"Type"`
+}

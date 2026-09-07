@@ -43,6 +43,7 @@ func NewSyncConnectorOption(opts ...SyncConnectorOptionFunc) *SyncConnectorOptio
 			Index:       "",
 			TableFilter: ".*\\..*",
 			Log:         DefaultLogger{},
+			ColsToKVs:   ColsToDoc(nil),
 		},
 	}
 	return option.WithOption(opts...)
@@ -118,6 +119,11 @@ func WithSyncLogger(v ILogger) SyncConnectorOptionFunc {
 	return func(o *SyncConnectorOption) { o.Log = v }
 }
 
+// WithColsToKVsHandle sets the connector ColsToKVsHandle.
+func WithColsToKVsHandle(v ColsToKVsHandle) SyncConnectorOptionFunc {
+	return func(o *SyncConnectorOption) { o.ColsToKVs = v }
+}
+
 // BaseConnectorOption contains options shared by connector implementations.
 type BaseConnectorOption struct {
 	Outer       IOuter            `json:"-" yaml:"-"`
@@ -127,6 +133,7 @@ type BaseConnectorOption struct {
 	Timeout     time.Duration     `json:"timeout" yaml:"timeout"`
 	TableFilter string            `json:"table_filter" yaml:"table_filter"`
 	TableMap    map[string]string `json:"table_map" yaml:"table_map"`
+	ColsToKVs   ColsToKVsHandle   `json:"-" yaml:"-"`
 }
 
 // SyncConnectorOption configures a synchronous Canal connector.

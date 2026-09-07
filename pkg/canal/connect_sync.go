@@ -131,7 +131,7 @@ func (c *SyncConnector) Convert(ctx context.Context, entries ...pbe.Entry) ([]En
 				columns = row.GetBeforeColumns()
 				action = ActionDelete
 			}
-			id, doc := DefaultColsToDoc(columns)
+			id, doc := c.ColsToKVs(columns)
 			if id == "" {
 				return result, errors.New("doc has no primary key")
 			}
