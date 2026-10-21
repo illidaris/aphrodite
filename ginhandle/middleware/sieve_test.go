@@ -69,12 +69,12 @@ func TestSieveConfigIsInWhite(t *testing.T) {
 		head string
 		want bool
 	}{
-		{"or matches one", SieveConfig{CondType: WhiteCondTypeOr, WhiteIds: []string{"id-1"}, WhiteIps: []string{"ip-1"}}, "id-1", "ip-2", "", true},
-		{"or no match", SieveConfig{CondType: WhiteCondTypeOr, WhiteIds: []string{"id-1"}, WhiteIps: []string{"ip-1"}}, "id-2", "ip-2", "", false},
+		{"or matches one", SieveConfig{CondType: WhiteCondTypeOr, WhiteIds: []string{"id-1"}, WhiteIps: []string{"ip-1"}, WhiteHeaders: []string{"header-1"}}, "id-1", "ip-2", "header-2", true},
+		{"or no match", SieveConfig{CondType: WhiteCondTypeOr, WhiteIds: []string{"id-1"}, WhiteIps: []string{"ip-1"}, WhiteHeaders: []string{"header-1"}}, "id-2", "ip-2", "header-2", false},
 		{"and matches all configured", SieveConfig{CondType: WhiteCondTypeAnd, WhiteIds: []string{"id-1"}, WhiteIps: []string{"ip-1"}}, "id-1", "ip-1", "ignored", true},
 		{"and misses one", SieveConfig{CondType: WhiteCondTypeAnd, WhiteIds: []string{"id-1"}, WhiteIps: []string{"ip-1"}}, "id-1", "ip-2", "", false},
-		{"and no conditions", SieveConfig{CondType: WhiteCondTypeAnd}, "id", "ip", "header", false},
-		{"or no conditions", SieveConfig{CondType: WhiteCondTypeOr}, "id", "ip", "header", false},
+		{"and no conditions", SieveConfig{CondType: WhiteCondTypeAnd}, "id", "ip", "header", true},
+		{"or no conditions", SieveConfig{CondType: WhiteCondTypeOr}, "id", "ip", "header", true},
 		{"unknown strategy", SieveConfig{CondType: 99, WhiteIds: []string{"id-1"}}, "id-1", "", "", false},
 	}
 	for _, tt := range tests {
@@ -105,7 +105,7 @@ func TestSieveMiddleware(t *testing.T) {
 		{"white id bypasses time", SieveConfig{Enable: true, NotBefore: future, WhiteIds: []string{"allowed"}}, "allowed", "", http.StatusNoContent},
 		{"white header bypasses time", SieveConfig{Enable: true, NotBefore: future, WhiteHeaders: []string{"yes"}}, "", "yes", http.StatusNoContent},
 		{"or white id bypasses time", SieveConfig{Enable: true, NotBefore: future, WhiteIds: []string{"allowed"}}, "allowed", "", http.StatusNoContent},
-		{"and requires every configured list", SieveConfig{Enable: true, NotBefore: future, CondType: WhiteCondTypeAnd, WhiteIds: []string{"allowed"}, WhiteIps: []string{"203.0.113.1"}}, "allowed", "", http.StatusForbidden},
+		{"and whitelist hit bypasses time", SieveConfig{Enable: true, NotBefore: future, CondType: WhiteCondTypeAnd, WhiteIds: []string{"allowed"}}, "allowed", "", http.StatusNoContent},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

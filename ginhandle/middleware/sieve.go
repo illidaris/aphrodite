@@ -75,33 +75,18 @@ type SieveConfig struct {
 	NotBefore    int           // 开始生效时间（Unix 秒，0 表示不限制）
 	Expire       int           // 失效时间（Unix 秒，0 表示不限制）
 	CondType     WhiteCondType // 白名单组合策略：或/与
-	WhiteIds     []string      // ID 白名单；为空时不参与组合判断
-	WhiteIps     []string      // IP 白名单；为空时不参与组合判断
-	WhiteHeaders []string      // 请求头白名单；为空时不参与组合判断
+	WhiteIds     []string      // ID 白名单；为空时视为匹配
+	WhiteIps     []string      // IP 白名单；为空时视为匹配
+	WhiteHeaders []string      // 请求头白名单；为空时视为匹配
 }
 
-// IsInWhite 按配置的组合策略判断请求是否命中白名单；未配置的白名单不参与判断。
+// IsInWhite 按配置的组合策略组合各项白名单判断结果。
 func (cfg SieveConfig) IsInWhite(id, ip, head string) bool {
-	configured := 0
-	matched := false
-	check := func(values []string, value string) bool {
-		if len(values) == 0 {
-			return true
-		}
-		configured++
-		ok := slices.Contains(values, value)
-		matched = matched || ok
-		return ok
-	}
-
 	switch cfg.CondType {
 	case WhiteCondTypeAnd:
-		return check(cfg.WhiteIds, id) && check(cfg.WhiteIps, ip) && check(cfg.WhiteHeaders, head) && configured > 0
+		return cfg.IsInWhiteId(id) && cfg.IsInWhiteIp(ip) && cfg.IsInWhiteHeader(head)
 	case WhiteCondTypeOr:
-		check(cfg.WhiteIds, id)
-		check(cfg.WhiteIps, ip)
-		check(cfg.WhiteHeaders, head)
-		return configured > 0 && matched
+		return cfg.IsInWhiteId(id) || cfg.IsInWhiteIp(ip) || cfg.IsInWhiteHeader(head)
 	default: // 未知策略按不命中处理，避免配置错误意外放行请求。
 		return false
 	}
