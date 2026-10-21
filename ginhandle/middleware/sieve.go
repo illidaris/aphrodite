@@ -20,19 +20,10 @@ func SieveMiddleware(busi string, newConfig NewConfigHandle) gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		// 命中任一白名单时跳过时间范围校验。
 		id := SieveWhiteIdFrmCtx(ctx)
-		if cfg.IsInWhiteId(id) {
-			c.Next()
-			return
-		}
 		ip := c.ClientIP()
-		if cfg.IsInWhiteIp(ip) {
-			c.Next()
-			return
-		}
 		headVal := c.Request.Header.Get(HEAD_WHITE)
-		if cfg.IsInWhiteHeader(headVal) {
+		if cfg.IsInWhite(id, ip, headVal) {
 			c.Next()
 			return
 		}
@@ -80,12 +71,40 @@ type NewConfigHandle func(context.Context, string) SieveConfig
 
 // SieveConfig 描述筛选开关、有效时间范围及各类白名单。
 type SieveConfig struct {
-	Enable       bool     // 是否启用筛选
-	NotBefore    int      // 开始生效时间（Unix 秒，0 表示不限制）
-	Expire       int      // 失效时间（Unix 秒，0 表示不限制）
-	WhiteIds     []string // ID 白名单；为空时视为匹配
-	WhiteIps     []string // IP 白名单；为空时视为匹配
-	WhiteHeaders []string // 请求头白名单；为空时视为匹配
+	Enable       bool          // 是否启用筛选
+	NotBefore    int           // 开始生效时间（Unix 秒，0 表示不限制）
+	Expire       int           // 失效时间（Unix 秒，0 表示不限制）
+	CondType     WhiteCondType // 白名单组合策略：或/与
+	WhiteIds     []string      // ID 白名单；为空时不参与组合判断
+	WhiteIps     []string      // IP 白名单；为空时不参与组合判断
+	WhiteHeaders []string      // 请求头白名单；为空时不参与组合判断
+}
+
+// IsInWhite 按配置的组合策略判断请求是否命中白名单；未配置的白名单不参与判断。
+func (cfg SieveConfig) IsInWhite(id, ip, head string) bool {
+	configured := 0
+	matched := false
+	check := func(values []string, value string) bool {
+		if len(values) == 0 {
+			return true
+		}
+		configured++
+		ok := slices.Contains(values, value)
+		matched = matched || ok
+		return ok
+	}
+
+	switch cfg.CondType {
+	case WhiteCondTypeAnd:
+		return check(cfg.WhiteIds, id) && check(cfg.WhiteIps, ip) && check(cfg.WhiteHeaders, head) && configured > 0
+	case WhiteCondTypeOr:
+		check(cfg.WhiteIds, id)
+		check(cfg.WhiteIps, ip)
+		check(cfg.WhiteHeaders, head)
+		return configured > 0 && matched
+	default: // 未知策略按不命中处理，避免配置错误意外放行请求。
+		return false
+	}
 }
 
 // IsInWhiteId 判断指定 ID 是否命中白名单；未配置白名单时视为匹配。
@@ -111,3 +130,13 @@ func (cfg SieveConfig) IsInWhiteHeader(header string) bool {
 	}
 	return slices.Contains(cfg.WhiteHeaders, header)
 }
+
+// WhiteCondType 定义多个白名单条件之间的组合关系。
+type WhiteCondType int8
+
+const (
+	// WhiteCondTypeOr 任意一个白名单条件命中即可放行。
+	WhiteCondTypeOr WhiteCondType = iota
+	// WhiteCondTypeAnd 所有白名单条件都命中才放行。
+	WhiteCondTypeAnd
+)
