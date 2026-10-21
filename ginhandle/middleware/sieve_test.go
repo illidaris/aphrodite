@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/illidaris/aphrodite/pkg/exception"
 	"github.com/illidaris/aphrodite/pkg/when"
 )
 
@@ -81,6 +82,50 @@ func TestSieveConfigIsInWhite(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.cfg.IsInWhite(tt.id, tt.ip, tt.head); got != tt.want {
 				t.Errorf("IsInWhite() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSieveConfigCheck(t *testing.T) {
+	now := time.Now()
+	future := int(now.Add(time.Hour).Unix())
+	past := int(now.Add(-time.Hour).Unix())
+	baseCtx := context.Background()
+
+	tests := []struct {
+		name string
+		cfg  SieveConfig
+		ctx  context.Context
+		ip   string
+		head string
+		want string
+	}{
+		{"disabled", SieveConfig{}, baseCtx, "", "", ""},
+		{"enabled without limits", SieveConfig{Enable: true}, baseCtx, "", "", ""},
+		{"before start", SieveConfig{Enable: true, NotBefore: future, WhiteIds: []string{"other"}, WhiteIps: []string{"other"}, WhiteHeaders: []string{"other"}}, baseCtx, "", "", "Forbidden Nbf"},
+		{"expired", SieveConfig{Enable: true, Expire: past, WhiteIds: []string{"other"}, WhiteIps: []string{"other"}, WhiteHeaders: []string{"other"}}, baseCtx, "", "", "Forbidden Exp"},
+		{"white id bypasses time", SieveConfig{Enable: true, NotBefore: future, WhiteIds: []string{"allowed"}}, WithSieveWhiteId(baseCtx, "allowed"), "", "", ""},
+		{"white ip bypasses time", SieveConfig{Enable: true, NotBefore: future, WhiteIps: []string{"192.0.2.1"}}, baseCtx, "192.0.2.1", "", ""},
+		{"white header bypasses time", SieveConfig{Enable: true, NotBefore: future, WhiteHeaders: []string{"allowed"}}, baseCtx, "", "allowed", ""},
+		{"and strategy requires all configured values", SieveConfig{Enable: true, CondType: WhiteCondTypeAnd, NotBefore: future, WhiteIds: []string{"allowed"}, WhiteIps: []string{"192.0.2.1"}}, WithSieveWhiteId(baseCtx, "allowed"), "192.0.2.1", "", ""},
+		{"or strategy matches one value", SieveConfig{Enable: true, CondType: WhiteCondTypeOr, NotBefore: future, WhiteIds: []string{"allowed"}, WhiteIps: []string{"192.0.2.1"}}, WithSieveWhiteId(baseCtx, "allowed"), "", "", ""},
+		{"time boundary allowed", SieveConfig{Enable: true, NotBefore: 1, Expire: 1}, when.WithClockOffset(baseCtx, time.Unix(1, 0).Sub(time.Now())), "", "", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.cfg.Check(tt.ctx, tt.ip, tt.head)
+			if tt.want == "" {
+				if err != nil {
+					t.Fatalf("Check() error = %v, want nil", err)
+				}
+				return
+			}
+			if err == nil || err.Error() != tt.want {
+				t.Errorf("Check() error = %v, want %q", err, tt.want)
+			}
+			if ex, ok := err.(exception.Exception); !ok || ex.Code() != int32(exception.ERR_BUSI) {
+				t.Errorf("Check() error = %T, want business exception", err)
 			}
 		})
 	}

@@ -15,26 +15,10 @@ func SieveMiddleware(busi string, newConfig NewConfigHandle) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		cfg := newConfig(ctx, busi)
-		// 未启用时不进行拦截。
-		if !cfg.Enable {
-			c.Next()
-			return
-		}
-		id := SieveWhiteIdFrmCtx(ctx)
 		ip := c.ClientIP()
 		headVal := c.Request.Header.Get(HEAD_WHITE)
-		if cfg.IsInWhite(id, ip, headVal) {
-			c.Next()
-			return
-		}
-		// 时间配置使用 Unix 秒；尚未开始或已经过期时返回 403。
-		now := when.Now(ctx)
-		if cfg.NotBefore > 0 && now.Unix() < int64(cfg.NotBefore) {
-			c.AbortWithStatusJSON(403, dto.NewResponse(nil, exception.ERR_BUSI.New("Forbidden Nbf")))
-			return
-		}
-		if cfg.Expire > 0 && now.Unix() > int64(cfg.Expire) {
-			c.AbortWithStatusJSON(403, dto.NewResponse(nil, exception.ERR_BUSI.New("Forbidden Exp")))
+		if ex := cfg.Check(ctx, ip, headVal); ex != nil {
+			c.AbortWithStatusJSON(403, dto.NewResponse(nil, ex))
 			return
 		}
 		c.Next()
@@ -78,6 +62,26 @@ type SieveConfig struct {
 	WhiteIds     []string      // ID 白名单；为空时视为匹配
 	WhiteIps     []string      // IP 白名单；为空时视为匹配
 	WhiteHeaders []string      // 请求头白名单；为空时视为匹配
+}
+
+// Check 检查筛选配置是否允许当前请求通过。
+func (cfg SieveConfig) Check(ctx context.Context, ip, head string) exception.Exception {
+	// 未启用时不进行拦截。
+	if !cfg.Enable {
+		return nil
+	}
+	if cfg.IsInWhite(SieveWhiteIdFrmCtx(ctx), ip, head) {
+		return nil
+	}
+	// 时间配置使用 Unix 秒；尚未开始或已经过期时返回 403 错误。
+	now := when.Now(ctx)
+	if cfg.NotBefore > 0 && now.Unix() < int64(cfg.NotBefore) {
+		return exception.ERR_BUSI.New("Forbidden Nbf")
+	}
+	if cfg.Expire > 0 && now.Unix() > int64(cfg.Expire) {
+		return exception.ERR_BUSI.New("Forbidden Exp")
+	}
+	return nil
 }
 
 // IsInWhite 按配置的组合策略组合各项白名单判断结果。
