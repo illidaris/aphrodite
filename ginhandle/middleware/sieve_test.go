@@ -1,0 +1,120 @@
+package middleware
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/illidaris/aphrodite/pkg/when"
+)
+
+func init() {
+	gin.SetMode(gin.TestMode)
+}
+
+func TestSieveWhiteIdFrmCtx(t *testing.T) {
+	tests := []struct {
+		name string
+		ctx  context.Context
+		want string
+	}{
+		{"missing", context.Background(), ""},
+		{"string", WithSieveWhiteId(context.Background(), "user-1"), "user-1"},
+		{"wrong type", context.WithValue(context.Background(), busiWhiteIdCtxKey{}, 42), ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SieveWhiteIdFrmCtx(tt.ctx); got != tt.want {
+				t.Errorf("SieveWhiteIdFrmCtx() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSieveConfigWhiteLists(t *testing.T) {
+	cfg := SieveConfig{WhiteIds: []string{"id-1"}, WhiteIps: []string{"192.0.2.1"}, WhiteHeaders: []string{"allowed"}}
+	tests := []struct {
+		name string
+		got  bool
+		want bool
+	}{
+		{"id hit", cfg.IsInWhiteId("id-1"), true},
+		{"id miss", cfg.IsInWhiteId("id-2"), false},
+		{"ip hit", cfg.IsInWhiteIp("192.0.2.1"), true},
+		{"ip miss", cfg.IsInWhiteIp("192.0.2.2"), false},
+		{"header hit", cfg.IsInWhiteHeader("allowed"), true},
+		{"header miss", cfg.IsInWhiteHeader("denied"), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Errorf("got %v, want %v", tt.got, tt.want)
+			}
+		})
+	}
+	if !(SieveConfig{}).IsInWhiteId("any") || !(SieveConfig{}).IsInWhiteIp("any") || !(SieveConfig{}).IsInWhiteHeader("any") {
+		t.Fatal("empty white lists must match all values")
+	}
+}
+
+func TestSieveMiddleware(t *testing.T) {
+	now := time.Now()
+	future := int(now.Add(time.Hour).Unix())
+	past := int(now.Add(-time.Hour).Unix())
+
+	tests := []struct {
+		name   string
+		cfg    SieveConfig
+		id     string
+		header string
+		status int
+	}{
+		{"disabled", SieveConfig{}, "", "", http.StatusNoContent},
+		{"enabled", SieveConfig{Enable: true}, "", "", http.StatusNoContent},
+		{"before start", SieveConfig{Enable: true, NotBefore: future, WhiteIds: []string{"other-id"}, WhiteIps: []string{"203.0.113.1"}, WhiteHeaders: []string{"other-header"}}, "", "", http.StatusForbidden},
+		{"expired", SieveConfig{Enable: true, Expire: past, WhiteIds: []string{"other-id"}, WhiteIps: []string{"203.0.113.1"}, WhiteHeaders: []string{"other-header"}}, "", "", http.StatusForbidden},
+		{"white id bypasses time", SieveConfig{Enable: true, NotBefore: future, WhiteIds: []string{"allowed"}}, "allowed", "", http.StatusNoContent},
+		{"white header bypasses time", SieveConfig{Enable: true, NotBefore: future, WhiteHeaders: []string{"yes"}}, "", "yes", http.StatusNoContent},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			engine := gin.New()
+			engine.Use(SieveMiddleware("demo", func(context.Context, string) SieveConfig { return tt.cfg }))
+			engine.GET("/", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.RemoteAddr = "198.51.100.2:1234"
+			ctx := req.Context()
+			if tt.id != "" {
+				ctx = WithSieveWhiteId(ctx, tt.id)
+			}
+			req = req.WithContext(ctx)
+			if tt.header != "" {
+				req.Header.Set(HEAD_WHITE, tt.header)
+			}
+			rec := httptest.NewRecorder()
+			engine.ServeHTTP(rec, req)
+			if rec.Code != tt.status {
+				t.Errorf("status = %d, want %d; body: %s", rec.Code, tt.status, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestSieveMiddlewareTimeBoundary(t *testing.T) {
+	// 时间戳等于 NotBefore/Expire 时均允许通过。
+	for _, cfg := range []SieveConfig{{Enable: true, NotBefore: 1}, {Enable: true, Expire: 1}} {
+		engine := gin.New()
+		engine.Use(SieveMiddleware("demo", func(context.Context, string) SieveConfig { return cfg }))
+		engine.GET("/", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req = req.WithContext(when.WithClockOffset(req.Context(), time.Unix(1, 0).Sub(time.Now())))
+		rec := httptest.NewRecorder()
+		engine.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNoContent {
+			t.Errorf("boundary status = %d, want %d", rec.Code, http.StatusNoContent)
+		}
+	}
+}

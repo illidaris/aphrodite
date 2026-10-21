@@ -26,6 +26,7 @@ audio/
 ip.data
 wire_gen.go
 
+.gocache
 .idea/
 .vs/
 .vscode/
