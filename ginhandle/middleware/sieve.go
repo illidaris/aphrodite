@@ -88,34 +88,38 @@ func (cfg SieveConfig) Check(ctx context.Context, ip, head string) exception.Exc
 func (cfg SieveConfig) IsInWhite(id, ip, head string) bool {
 	// 未配置任何白名单项时不额外限制；否则按策略合并已配置的条件。
 	type whiteCheck struct{ configured, matched bool }
-	checks := make([]whiteCheck, 0, 3)
-	isCheck, matched := cfg.IsInWhiteId(id)
-	checks = append(checks, whiteCheck{isCheck, matched})
-	isCheck, matched = cfg.IsInWhiteIp(ip)
-	checks = append(checks, whiteCheck{isCheck, matched})
-	isCheck, matched = cfg.IsInWhiteHeader(head)
-	checks = append(checks, whiteCheck{isCheck, matched})
+	idConfigured, idMatched := cfg.IsInWhiteId(id)
+	ipConfigured, ipMatched := cfg.IsInWhiteIp(ip)
+	headConfigured, headMatched := cfg.IsInWhiteHeader(head)
+	checks := [...]whiteCheck{
+		{idConfigured, idMatched},
+		{ipConfigured, ipMatched},
+		{headConfigured, headMatched},
+	}
 
-	configured := false
-	result := cfg.CondType == WhiteCondTypeAnd
-	if cfg.CondType != WhiteCondTypeAnd && cfg.CondType != WhiteCondTypeOr {
+	switch cfg.CondType {
+	case WhiteCondTypeAnd:
+		for _, check := range checks {
+			if check.configured && !check.matched {
+				return false
+			}
+		}
+		return true
+	case WhiteCondTypeOr:
+		configured := false
+		for _, check := range checks {
+			if check.configured {
+				configured = true
+				if check.matched {
+					return true
+				}
+			}
+		}
+		// 没有配置条件时保持放行；配置了条件但都未命中则拒绝。
+		return !configured
+	default: // 未知策略按不命中处理，避免配置错误时意外放行请求。
 		return false
 	}
-	for _, check := range checks {
-		if !check.configured {
-			continue
-		}
-		configured = true
-		if cfg.CondType == WhiteCondTypeAnd {
-			result = result && check.matched
-		} else {
-			result = result || check.matched
-		}
-	}
-	if !configured {
-		return true
-	}
-	return result
 }
 
 // IsInWhiteId 判断指定 ID 是否命中白名单；未配置白名单时视为匹配。
@@ -134,16 +138,10 @@ func (cfg SieveConfig) IsInWhiteHeader(header string) (bool, bool) {
 }
 
 func hasVal(v string, args ...string) (bool, bool) {
-	isCheck, has := false, false
-	l := len(args)
-	isCheck = l > 0
-	if l == 0 {
-		return isCheck, has
+	if len(args) == 0 {
+		return false, false
 	}
-	if v == "" {
-		return isCheck, false
-	}
-	return isCheck, slices.Contains(args, v)
+	return true, v != "" && slices.Contains(args, v)
 }
 
 // WhiteCondType 定义多个白名单条件之间的组合关系。
