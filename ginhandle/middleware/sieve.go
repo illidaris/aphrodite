@@ -86,38 +86,64 @@ func (cfg SieveConfig) Check(ctx context.Context, ip, head string) exception.Exc
 
 // IsInWhite 按配置的组合策略组合各项白名单判断结果。
 func (cfg SieveConfig) IsInWhite(id, ip, head string) bool {
-	switch cfg.CondType {
-	case WhiteCondTypeAnd:
-		return cfg.IsInWhiteId(id) && cfg.IsInWhiteIp(ip) && cfg.IsInWhiteHeader(head)
-	case WhiteCondTypeOr:
-		return cfg.IsInWhiteId(id) || cfg.IsInWhiteIp(ip) || cfg.IsInWhiteHeader(head)
-	default: // 未知策略按不命中处理，避免配置错误意外放行请求。
+	// 未配置任何白名单项时不额外限制；否则按策略合并已配置的条件。
+	type whiteCheck struct{ configured, matched bool }
+	checks := make([]whiteCheck, 0, 3)
+	isCheck, matched := cfg.IsInWhiteId(id)
+	checks = append(checks, whiteCheck{isCheck, matched})
+	isCheck, matched = cfg.IsInWhiteIp(ip)
+	checks = append(checks, whiteCheck{isCheck, matched})
+	isCheck, matched = cfg.IsInWhiteHeader(head)
+	checks = append(checks, whiteCheck{isCheck, matched})
+
+	configured := false
+	result := cfg.CondType == WhiteCondTypeAnd
+	if cfg.CondType != WhiteCondTypeAnd && cfg.CondType != WhiteCondTypeOr {
 		return false
 	}
+	for _, check := range checks {
+		if !check.configured {
+			continue
+		}
+		configured = true
+		if cfg.CondType == WhiteCondTypeAnd {
+			result = result && check.matched
+		} else {
+			result = result || check.matched
+		}
+	}
+	if !configured {
+		return true
+	}
+	return result
 }
 
 // IsInWhiteId 判断指定 ID 是否命中白名单；未配置白名单时视为匹配。
-func (cfg SieveConfig) IsInWhiteId(id string) bool {
-	if len(cfg.WhiteIds) == 0 {
-		return true
-	}
-	return slices.Contains(cfg.WhiteIds, id)
+func (cfg SieveConfig) IsInWhiteId(id string) (bool, bool) {
+	return hasVal(id, cfg.WhiteIds...)
 }
 
 // IsInWhiteIp 判断指定 IP 是否命中白名单；未配置白名单时视为匹配。
-func (cfg SieveConfig) IsInWhiteIp(ip string) bool {
-	if len(cfg.WhiteIps) == 0 {
-		return true
-	}
-	return slices.Contains(cfg.WhiteIps, ip)
+func (cfg SieveConfig) IsInWhiteIp(ip string) (bool, bool) {
+	return hasVal(ip, cfg.WhiteIps...)
 }
 
 // IsInWhiteHeader 判断指定请求头值是否命中白名单；未配置白名单时视为匹配。
-func (cfg SieveConfig) IsInWhiteHeader(header string) bool {
-	if len(cfg.WhiteHeaders) == 0 {
-		return true
+func (cfg SieveConfig) IsInWhiteHeader(header string) (bool, bool) {
+	return hasVal(header, cfg.WhiteHeaders...)
+}
+
+func hasVal(v string, args ...string) (bool, bool) {
+	isCheck, has := false, false
+	l := len(args)
+	isCheck = l > 0
+	if l == 0 {
+		return isCheck, has
 	}
-	return slices.Contains(cfg.WhiteHeaders, header)
+	if v == "" {
+		return isCheck, false
+	}
+	return isCheck, slices.Contains(args, v)
 }
 
 // WhiteCondType 定义多个白名单条件之间的组合关系。
