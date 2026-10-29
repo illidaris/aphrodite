@@ -1,23 +1,17 @@
 package contextex
 
-import "context"
+import (
+	"context"
 
-type CtxBizrKey struct{}
+	coreContextex "github.com/illidaris/core/contextex"
+)
 
-var ctxKeyBiz = CtxBizrKey{}
-
+// WithBizId stores the business identifier in ctx.
 func WithBizId(ctx context.Context, v int64) context.Context {
-	return context.WithValue(ctx, ctxKeyBiz, v)
+	return coreContextex.WithBizId(ctx, v)
 }
 
+// GetBizId returns the business identifier stored in ctx, or 0 if absent.
 func GetBizId(ctx context.Context) int64 {
-	v := ctx.Value(ctxKeyBiz)
-	if v == nil {
-		return 0
-	}
-	p, ok := v.(int64)
-	if !ok {
-		return 0
-	}
-	return p
+	return coreContextex.GetBizId(ctx)
 }

@@ -1,28 +1,17 @@
 package contextex
 
-import "context"
+import (
+	"context"
 
-type CtxLogIgnoreKey struct{}
+	coreContextex "github.com/illidaris/core/contextex"
+)
 
-var ctxLogIgnoreKey CtxLogIgnoreKey
-
-// 根据上下文，不打日志
+// WithLogIgnore marks ctx so logging helpers can skip writing a log entry.
 func WithLogIgnore(ctx context.Context) context.Context {
-	v := ctx.Value(ctxLogIgnoreKey)
-	if v != nil {
-		return ctx
-	}
-	return context.WithValue(ctx, ctxLogIgnoreKey, true)
+	return coreContextex.WithLogIgnore(ctx)
 }
 
+// IsLogIgnoreFrmCtx reports whether ctx is marked to skip logging.
 func IsLogIgnoreFrmCtx(ctx context.Context) bool {
-	v := ctx.Value(ctxLogIgnoreKey)
-	if v == nil {
-		return false
-	}
-	b, ok := v.(bool)
-	if !ok {
-		return false
-	}
-	return b
+	return coreContextex.IsLogIgnoreFrmCtx(ctx)
 }

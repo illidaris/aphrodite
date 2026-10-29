@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/illidaris/core"
+	coreContextex "github.com/illidaris/core/contextex"
 	"github.com/illidaris/logger"
 	"go.uber.org/zap"
 )
@@ -68,7 +69,11 @@ func WithTrace(c *gin.Context, birth time.Time) *gin.Context {
 	// assembly trace & session
 	ctx := c.Request.Context()
 	ctx = core.TraceID.SetString(ctx, traceID) // set traceid  into ctx
-	ctx = core.SessionID.SetString(ctx, sID)   // set session  into ctx
+	ctx = coreContextex.WithTraceId(ctx, traceID)
+
+	ctx = core.SessionID.SetString(ctx, sID) // set session  into ctx
+	ctx = coreContextex.WithSessionId(ctx, sID)
+
 	ctx = logger.NewContext(ctx,
 		zap.String(core.Action.String(), c.Request.URL.Path),
 		zap.String(core.TraceID.String(), traceID),
