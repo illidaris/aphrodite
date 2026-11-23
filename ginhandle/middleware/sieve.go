@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/illidaris/aphrodite/dto"
+	"github.com/illidaris/aphrodite/pkg/check"
 	"github.com/illidaris/aphrodite/pkg/exception"
 	"github.com/illidaris/aphrodite/pkg/when"
 )
@@ -129,7 +130,11 @@ func (cfg SieveConfig) IsInWhiteId(id string) (bool, bool) {
 
 // IsInWhiteIp 判断指定 IP 是否命中白名单；未配置白名单时视为匹配。
 func (cfg SieveConfig) IsInWhiteIp(ip string) (bool, bool) {
-	return hasVal(ip, cfg.WhiteIps...)
+	if len(cfg.WhiteIps) == 0 {
+		return false, false
+	}
+	b := check.IsIPInWhitelist(ip, cfg.WhiteIps)
+	return true, b
 }
 
 // IsInWhiteHeader 判断指定请求头值是否命中白名单；未配置白名单时视为匹配。
