@@ -60,9 +60,9 @@ type SieveConfig struct {
 	NotBefore    int           // 开始生效时间（Unix 秒，0 表示不限制）
 	Expire       int           // 失效时间（Unix 秒，0 表示不限制）
 	CondType     WhiteCondType // 白名单组合策略：或/与
-	WhiteIds     []string      // ID 白名单；为空时视为匹配
-	WhiteIps     []string      // IP 白名单；为空时视为匹配
-	WhiteHeaders []string      // 请求头白名单；为空时视为匹配
+	WhiteIds     []string      // ID 白名单；为空时不参与组合判断
+	WhiteIps     []string      // IP 白名单；为空时不参与组合判断
+	WhiteHeaders []string      // 请求头白名单；为空时不参与组合判断
 }
 
 // Check 检查筛选配置是否允许当前请求通过。
@@ -85,68 +85,67 @@ func (cfg SieveConfig) Check(ctx context.Context, ip, head string) exception.Exc
 	return nil
 }
 
-// IsInWhite 按配置的组合策略组合各项白名单判断结果。
+// IsInWhite 判断请求是否命中白名单。
+// 仅参与判断已配置的白名单项：Or 策略下任一条件命中即放行，And 策略下需全部命中。
+// 未配置任何白名单项或 CondType 非法时返回 false。
 func (cfg SieveConfig) IsInWhite(id, ip, head string) bool {
-	// 未配置任何白名单项时不额外限制；否则按策略合并已配置的条件。
-	type whiteCheck struct{ configured, matched bool }
-	idConfigured, idMatched := cfg.IsInWhiteId(id)
-	ipConfigured, ipMatched := cfg.IsInWhiteIp(ip)
-	headConfigured, headMatched := cfg.IsInWhiteHeader(head)
-	checks := [...]whiteCheck{
-		{idConfigured, idMatched},
-		{ipConfigured, ipMatched},
-		{headConfigured, headMatched},
+	// 收集已配置的白名单条件，再按组合策略判断。
+	checks := make([]WhiteCheck[string], 0, 3)
+	// 空白名单不参与组合判断，避免未配置的条件影响 And/Or 结果。
+	if len(cfg.WhiteIds) > 0 {
+		checks = append(checks, WhiteCheck[string]{Value: id, Whites: cfg.WhiteIds})
 	}
-
+	if len(cfg.WhiteIps) > 0 {
+		checks = append(checks, WhiteCheck[string]{Value: ip, Whites: cfg.WhiteIps, Check: func(s []string, e string) bool {
+			return check.IsIPInWhitelist(e, s)
+		}})
+	}
+	if len(cfg.WhiteHeaders) > 0 {
+		checks = append(checks, WhiteCheck[string]{Value: head, Whites: cfg.WhiteHeaders})
+	}
+	// 没有任何已配置的白名单，视为未命中。
+	if len(checks) == 0 {
+		return false
+	}
 	switch cfg.CondType {
 	case WhiteCondTypeAnd:
 		for _, check := range checks {
-			if check.configured && !check.matched {
+			if !check.Valid() {
 				return false
 			}
 		}
 		return true
 	case WhiteCondTypeOr:
-		configured := false
 		for _, check := range checks {
-			if check.configured {
-				configured = true
-				if check.matched {
-					return true
-				}
+			if check.Valid() {
+				return true
 			}
 		}
-		// 没有配置条件时保持放行；配置了条件但都未命中则拒绝。
-		return !configured
+		return false
 	default: // 未知策略按不命中处理，避免配置错误时意外放行请求。
 		return false
 	}
 }
 
-// IsInWhiteId 判断指定 ID 是否命中白名单；未配置白名单时视为匹配。
-func (cfg SieveConfig) IsInWhiteId(id string) (bool, bool) {
-	return hasVal(id, cfg.WhiteIds...)
+// WhiteCheck 描述单个白名单条件及其匹配规则。
+// Whites 为空时该条件无效；Check 为空时使用 slices.Contains 判断是否命中。
+type WhiteCheck[T comparable] struct {
+	Value  T                 // 待校验的值
+	Whites []T               // 白名单列表
+	Check  func([]T, T) bool // 自定义匹配函数，参数依次为白名单列表和待校验值
 }
 
-// IsInWhiteIp 判断指定 IP 是否命中白名单；未配置白名单时视为匹配。
-func (cfg SieveConfig) IsInWhiteIp(ip string) (bool, bool) {
-	if len(cfg.WhiteIps) == 0 {
-		return false, false
+// Valid 判断当前值是否命中白名单。
+func (i WhiteCheck[T]) Valid() bool {
+	// 未配置白名单时视为未命中。
+	if len(i.Whites) == 0 {
+		return false
 	}
-	b := check.IsIPInWhitelist(ip, cfg.WhiteIps)
-	return true, b
-}
-
-// IsInWhiteHeader 判断指定请求头值是否命中白名单；未配置白名单时视为匹配。
-func (cfg SieveConfig) IsInWhiteHeader(header string) (bool, bool) {
-	return hasVal(header, cfg.WhiteHeaders...)
-}
-
-func hasVal(v string, args ...string) (bool, bool) {
-	if len(args) == 0 {
-		return false, false
+	// 未配置自定义匹配函数时，使用 slices.Contains 进行精确匹配。
+	if i.Check != nil {
+		return i.Check(i.Whites, i.Value)
 	}
-	return true, v != "" && slices.Contains(args, v)
+	return slices.Contains(i.Whites, i.Value)
 }
 
 // WhiteCondType 定义多个白名单条件之间的组合关系。
